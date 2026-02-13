@@ -39,7 +39,7 @@ export const breakDownGoal = async (goal) => {
   } catch (error) {
     console.error('AI Breakdown Failed:', error)
     return [
-      { title: `Manual Override: ${goal}`, xp: 100, deadlineOffset: 1 }
+      { title: `${goal}`, xp: 20, deadlineOffset: 1 }
     ]
   }
 }

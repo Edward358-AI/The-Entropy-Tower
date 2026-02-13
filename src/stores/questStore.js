@@ -185,14 +185,20 @@ export const useQuestStore = defineStore('quest', () => {
   }
 
   const checkDecay = async () => {
-    const today = new Date()
+    const today = playerStore.getTodayStr()
+
+    // Fix #3: Only run decay once per day
+    if (playerStore.lastDecayDate === today) return
+    playerStore.lastDecayDate = today
+
+    const now = new Date()
     let totalPenalty = 0
 
     for (const quest of quests.value) {
       if (!quest.deadline) continue
 
       const deadline = new Date(quest.deadline.seconds * 1000)
-      const daysUpdate = differenceInCalendarDays(today, deadline)
+      const daysUpdate = differenceInCalendarDays(now, deadline)
 
       if (daysUpdate > 0) {
         // Apply Rot: 50 * (2 ^ (d - 1))
@@ -208,6 +214,9 @@ export const useQuestStore = defineStore('quest', () => {
 
     if (totalPenalty > 0) {
       await playerStore.applyDecay(totalPenalty)
+    } else {
+      // Still save the lastDecayDate even if no penalty
+      await playerStore.saveStats()
     }
   }
 

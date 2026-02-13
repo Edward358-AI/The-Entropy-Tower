@@ -1,7 +1,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useQuestStore } from '../stores/questStore'
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, format } from 'date-fns'
+import { Timestamp } from 'firebase/firestore'
 import { CheckCircle, AlertTriangle, ShieldAlert, Trash2, Loader2, Pencil, X, Check } from 'lucide-vue-next'
 
 const questStore = useQuestStore()
@@ -10,6 +11,7 @@ const questStore = useQuestStore()
 const editingId = ref(null)
 const editTitle = ref('')
 const editXP = ref(0)
+const editDeadline = ref('')
 
 onMounted(() => {
   questStore.loadQuests()
@@ -32,20 +34,32 @@ const startEdit = (quest) => {
   editingId.value = quest.id
   editTitle.value = quest.title
   editXP.value = quest.xpReward
+  // Convert Firestore timestamp to YYYY-MM-DD for date input
+  if (quest.deadline?.seconds) {
+    const d = new Date(quest.deadline.seconds * 1000)
+    editDeadline.value = format(d, 'yyyy-MM-dd')
+  } else {
+    editDeadline.value = ''
+  }
 }
 
 const cancelEdit = () => {
   editingId.value = null
   editTitle.value = ''
   editXP.value = 0
+  editDeadline.value = ''
 }
 
 const saveEdit = async () => {
   if (!editTitle.value.trim()) return
-  await questStore.editQuest(editingId.value, {
+  const updates = {
     title: editTitle.value.trim(),
     xpReward: Number(editXP.value) || 10
-  })
+  }
+  if (editDeadline.value) {
+    updates.deadline = Timestamp.fromDate(new Date(editDeadline.value + 'T23:59:59'))
+  }
+  await questStore.editQuest(editingId.value, updates)
   editingId.value = null
 }
 </script>
@@ -62,12 +76,9 @@ const saveEdit = async () => {
     </div>
 
     <transition-group name="list" tag="div" class="space-y-3">
-      <div 
-        v-for="quest in questStore.quests" 
-        :key="quest.id"
+      <div v-for="quest in questStore.quests" :key="quest.id"
         class="border rounded-xl p-4 transition-all duration-300 group relative overflow-hidden"
-        :class="getStatusColor(quest)"
-      >
+        :class="getStatusColor(quest)">
         <!-- Normal View -->
         <div v-if="editingId !== quest.id" class="flex justify-between items-start relative z-10">
           <div class="flex-1">
@@ -76,11 +87,11 @@ const saveEdit = async () => {
               <AlertTriangle v-else-if="quest.daysOverdue > 0" class="w-4 h-4 text-orange-400" />
               {{ quest.title }}
             </h3>
-            
+
             <div class="flex items-center gap-3 text-xs text-gray-400">
               <span class="text-astral-glow font-mono font-bold">+{{ quest.xpReward }} XP</span>
               <span v-if="quest.deadline">Due {{ getDeadlineText(quest.deadline) }}</span>
-              
+
               <!-- Sync Status -->
               <span v-if="quest.id.startsWith('temp-')" class="flex items-center gap-1 text-gray-500 animate-pulse">
                 <Loader2 class="w-3 h-3 animate-spin" />
@@ -94,27 +105,21 @@ const saveEdit = async () => {
           </div>
 
           <div class="flex items-center gap-1">
-            <button 
-              @click.stop="startEdit(quest)"
+            <button @click.stop="startEdit(quest)"
               class="p-2 rounded-full hover:bg-blue-500/20 text-gray-600 hover:text-blue-400 transition-colors opacity-40 hover:opacity-100"
-              title="Edit Quest"
-            >
+              title="Edit Quest">
               <Pencil class="w-4 h-4" />
             </button>
 
-            <button 
-              @click.stop="questStore.deleteQuest(quest.id)"
+            <button @click.stop="questStore.deleteQuest(quest.id)"
               class="p-2 rounded-full hover:bg-red-500/20 text-gray-600 hover:text-red-500 transition-colors opacity-40 hover:opacity-100"
-              title="Abandon Quest"
-            >
+              title="Abandon Quest">
               <Trash2 class="w-4 h-4" />
             </button>
 
-            <button 
-              @click="questStore.completeQuest(quest.id)"
+            <button @click="questStore.completeQuest(quest.id)"
               class="p-2 rounded-full bg-white/5 hover:bg-astral-glow hover:text-white text-gray-400 transition-colors"
-              title="Complete Quest"
-            >
+              title="Complete Quest">
               <CheckCircle class="w-6 h-6" />
             </button>
           </div>
@@ -124,41 +129,32 @@ const saveEdit = async () => {
         <div v-else class="relative z-10 space-y-3">
           <div>
             <label class="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Quest Title</label>
-            <input 
-              v-model="editTitle"
-              @keyup.enter="saveEdit"
-              @keyup.escape="cancelEdit"
+            <input v-model="editTitle" @keyup.enter="saveEdit" @keyup.escape="cancelEdit"
               class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors"
-              placeholder="Quest title..."
-              autofocus
-            />
+              placeholder="Quest title..." autofocus />
           </div>
-          
+
           <div>
             <label class="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">XP Reward</label>
-            <input 
-              v-model.number="editXP"
-              @keyup.enter="saveEdit"
-              @keyup.escape="cancelEdit"
-              type="number"
-              min="1"
+            <input v-model.number="editXP" @keyup.enter="saveEdit" @keyup.escape="cancelEdit" type="number" min="1"
               max="500"
-              class="w-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-astral-glow text-sm font-mono focus:outline-none focus:border-astral-glow/50 transition-colors"
-            />
+              class="w-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-astral-glow text-sm font-mono focus:outline-none focus:border-astral-glow/50 transition-colors" />
+          </div>
+
+          <div>
+            <label class="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Due Date</label>
+            <input v-model="editDeadline" @keyup.escape="cancelEdit" type="date"
+              class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors" />
           </div>
 
           <div class="flex items-center gap-2 pt-1">
-            <button 
-              @click="saveEdit"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-astral-glow/20 hover:bg-astral-glow/40 text-astral-glow text-xs font-bold transition-colors"
-            >
+            <button @click="saveEdit"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-astral-glow/20 hover:bg-astral-glow/40 text-astral-glow text-xs font-bold transition-colors">
               <Check class="w-3 h-3" />
               Save
             </button>
-            <button 
-              @click="cancelEdit"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs transition-colors"
-            >
+            <button @click="cancelEdit"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs transition-colors">
               <X class="w-3 h-3" />
               Cancel
             </button>
@@ -174,11 +170,13 @@ const saveEdit = async () => {
 .list-leave-active {
   transition: all 0.5s ease;
 }
+
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
   transform: translateX(-30px);
 }
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }

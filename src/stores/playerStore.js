@@ -11,6 +11,8 @@ export const usePlayerStore = defineStore('player', () => {
   const isLevelCapped = ref(false)
   const loading = ref(false)
   const isSyncing = ref(false)
+  const lastActiveDate = ref(null)
+  const lastDecayDate = ref(null)
 
   // Timeout wrapper — prevents Firebase from hanging forever when offline
   const withTimeout = (promise, ms = 10000) => {
@@ -18,6 +20,19 @@ export const usePlayerStore = defineStore('player', () => {
       promise,
       new Promise((_, reject) => setTimeout(() => reject(new Error('Sync timeout')), ms))
     ])
+  }
+
+  // Helper: get today as YYYY-MM-DD in local time
+  const getTodayStr = () => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  }
+
+  // Helper: get yesterday as YYYY-MM-DD in local time
+  const getYesterdayStr = () => {
+    const now = new Date()
+    now.setDate(now.getDate() - 1)
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   }
 
   // XP to next level: 100 + (Level * 20)
@@ -41,11 +56,13 @@ export const usePlayerStore = defineStore('player', () => {
 
       if (snap.exists()) {
         const data = snap.data()
-        level.value = data.level || 1
-        currentXP.value = data.currentXP || 0
+        level.value = data.level || 5
+        currentXP.value = data.currentXP || 50
         streak.value = data.streak || 0
         totalXPLost.value = data.totalXPLost || 0
         isLevelCapped.value = data.isLevelCapped || false
+        lastActiveDate.value = data.lastActiveDate || null
+        lastDecayDate.value = data.lastDecayDate || null
       } else {
         // Create initial stats
         await withTimeout(setDoc(userRef, {
@@ -54,6 +71,8 @@ export const usePlayerStore = defineStore('player', () => {
           streak: 0,
           totalXPLost: 0,
           isLevelCapped: false,
+          lastActiveDate: null,
+          lastDecayDate: null,
           createdAt: serverTimestamp()
         }))
       }
@@ -64,10 +83,32 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  // Fix #2: Update streak based on consecutive daily activity
+  const updateStreak = () => {
+    const today = getTodayStr()
+    const yesterday = getYesterdayStr()
+
+    if (lastActiveDate.value === today) {
+      // Already active today, no change
+      return
+    } else if (lastActiveDate.value === yesterday) {
+      // Consecutive day — streak continues
+      streak.value++
+    } else {
+      // Streak broken — reset to 1
+      streak.value = 1
+    }
+
+    lastActiveDate.value = today
+  }
+
   const addXP = async (amount) => {
     if (isLevelCapped.value) return // Boss Gate active
 
     currentXP.value += amount
+
+    // Update streak on any XP-earning activity
+    updateStreak()
 
     // Check Level Up
     while (currentXP.value >= xpToNextLevel.value) {
@@ -82,6 +123,14 @@ export const usePlayerStore = defineStore('player', () => {
       level.value++
     }
 
+    await saveStats()
+  }
+
+  // Fix #4: Unlock boss gate
+  const unlockBossGate = async () => {
+    isLevelCapped.value = false
+    currentXP.value = 0
+    level.value++
     await saveStats()
   }
 
@@ -114,6 +163,8 @@ export const usePlayerStore = defineStore('player', () => {
         streak: streak.value,
         totalXPLost: totalXPLost.value,
         isLevelCapped: isLevelCapped.value,
+        lastActiveDate: lastActiveDate.value,
+        lastDecayDate: lastDecayDate.value,
         lastUpdated: serverTimestamp()
       }))
     } catch (err) {
@@ -131,10 +182,14 @@ export const usePlayerStore = defineStore('player', () => {
     isLevelCapped,
     loading,
     isSyncing,
+    lastDecayDate,
     xpToNextLevel,
     towerMaterial,
+    getTodayStr,
     initStats,
     addXP,
-    applyDecay
+    applyDecay,
+    unlockBossGate,
+    saveStats
   }
 })

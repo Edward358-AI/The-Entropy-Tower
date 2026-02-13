@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/authStore'
 
 import { usePlayerStore } from './stores/playerStore'
-import { Loader2, Cloud } from 'lucide-vue-next'
+import { Loader2 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const playerStore = usePlayerStore()
@@ -23,8 +23,10 @@ onMounted(() => {
     </div>
 
     <!-- Sync Indicator -->
-    <div class="fixed top-4 right-4 z-50 pointer-events-none transition-opacity duration-500" :class="playerStore.isSyncing ? 'opacity-100' : 'opacity-0'">
-      <div class="flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-astral-glow">
+    <div class="fixed top-4 right-4 z-50 pointer-events-none transition-opacity duration-500"
+      :class="playerStore.isSyncing ? 'opacity-100' : 'opacity-0'">
+      <div
+        class="flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-astral-glow">
         <Loader2 class="w-3 h-3 animate-spin" />
         <span>Saving...</span>
       </div>
