@@ -11,18 +11,17 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 }
 
-let app
-let auth
-let db
-
-export const initFirebase = () => {
-  app = initializeApp(firebaseConfig)
-  auth = getAuth(app)
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentSingleTabManager({})
-    })
-  })
+// Debug: log if keys are missing (will show in browser console)
+if (!firebaseConfig.apiKey) {
+  console.error('MISSING FIREBASE CONFIG — env variables not loaded:', firebaseConfig)
 }
+
+const app = initializeApp(firebaseConfig)
+const auth = getAuth(app)
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentSingleTabManager({})
+  })
+})
 
 export { auth, db }
