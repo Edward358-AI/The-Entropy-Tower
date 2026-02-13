@@ -3,23 +3,23 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
 
 export const breakDownGoal = async (goal) => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
   const prompt = `
-    You are the "Architect" of an Entropy-fighting RPG system.
+    You are a task breakdown assistant.
     The user has a goal: "${goal}".
     
-    Break this into 3-8 specific "Micro-Quests" that take 5-15 minutes each.
-    Each quest needs:
-    - title: Brief, actionable, "RPG" flavored (e.g. "Locate the Artifact" instead of "Find book")
-    - xp: 10-50 based on difficulty
+    Break this into 3-8 specific micro-tasks that take 5-15 minutes each.
+    Each task needs:
+    - title: Short, clear, and actionable. NO dramatic/RPG prefixes like "The Physics Enigma" or "Locate the Artifact". Just say exactly what to do, e.g. "Read Chapter 1", "Write intro paragraph", "Review lecture notes".
+    - xp: 5-35 based on difficulty. Be conservative — most tasks should be 10-20 XP. Only give 30+ for genuinely hard tasks.
     - deadlineOffset: Days from now (1-7)
     
     Return ONLY a valid JSON array. No markdown, no "json" label.
     Example:
     [
-      { "title": "Scout the Terrain (Read Ch.1)", "xp": 20, "deadlineOffset": 1 },
-      { "title": "Draft the Blueprint (Outline)", "xp": 30, "deadlineOffset": 2 }
+      { "title": "Read Chapter 1", "xp": 15, "deadlineOffset": 1 },
+      { "title": "Write outline for essay", "xp": 20, "deadlineOffset": 2 }
     ]
   `
 

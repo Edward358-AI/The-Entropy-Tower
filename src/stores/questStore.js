@@ -29,7 +29,14 @@ export const useQuestStore = defineStore('quest', () => {
         where('status', '!=', 'completed')
       )
       const snap = await withTimeout(getDocs(q))
-      quests.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      quests.value = snap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => {
+          // Soonest deadline first, no deadline goes to bottom
+          const aTime = a.deadline?.seconds ?? Infinity
+          const bTime = b.deadline?.seconds ?? Infinity
+          return aTime - bTime
+        })
 
       // Check for decay on load
       checkDecay()
@@ -121,7 +128,8 @@ export const useQuestStore = defineStore('quest', () => {
 
       // Log History for Heatmap
       const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
-      const todayStr = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+      const now = new Date()
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
       // Use setDoc with merge to ensure doc exists
       await withTimeout(setDoc(historyRef, {

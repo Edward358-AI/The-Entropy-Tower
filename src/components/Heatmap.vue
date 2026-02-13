@@ -1,68 +1,121 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { db, auth } from '../services/firebase'
 import { doc, getDoc } from 'firebase/firestore'
-import { subDays, format, startOfWeek, addDays, isSameDay } from 'date-fns'
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isToday } from 'date-fns'
+import { useQuestStore } from '../stores/questStore'
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+
+const questStore = useQuestStore()
 
 const history = ref([])
-const daysToShow = 28 // 4 weeks
+const currentMonth = ref(new Date())
+const historyData = ref({})
 
-const loadHistory = async () => {
+const monthLabel = computed(() => format(currentMonth.value, 'MMMM yyyy'))
+
+const canGoForward = computed(() => {
+  const now = new Date()
+  return currentMonth.value.getMonth() < now.getMonth() || currentMonth.value.getFullYear() < now.getFullYear()
+})
+
+const prevMonth = () => {
+  currentMonth.value = subMonths(currentMonth.value, 1)
+  buildGrid()
+}
+
+const nextMonth = () => {
+  if (canGoForward.value) {
+    currentMonth.value = addMonths(currentMonth.value, 1)
+    buildGrid()
+  }
+}
+
+const fetchHistory = async () => {
   if (!auth.currentUser) return
-  
-  // Align start date to the beginning of the week (Monday) 4 weeks ago
-  const today = new Date()
-  const startDate = startOfWeek(subDays(today, daysToShow - 1), { weekStartsOn: 1 }) 
-  
-  // Fetch History
-  let historyData = {}
+
   try {
-     const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
-     const snap = await getDoc(historyRef)
-     if (snap.exists()) {
-       historyData = snap.data()
-     }
+    const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
+    const snap = await getDoc(historyRef)
+    if (snap.exists()) {
+      historyData.value = snap.data()
+    }
   } catch (err) {
     console.error("Failed to load heatmap:", err)
   }
-  
+
+  buildGrid()
+}
+
+const buildGrid = () => {
+  const monthStart = startOfMonth(currentMonth.value)
+  const monthEnd = endOfMonth(currentMonth.value)
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
+
   const grid = []
-  for (let i = 0; i < daysToShow; i++) {
-    const date = addDays(startDate, i)
-    const dateStr = format(date, 'yyyy-MM-dd')
-    const count = historyData[dateStr] || 0
-    
+  let day = calStart
+
+  while (day <= calEnd) {
+    const dateStr = format(day, 'yyyy-MM-dd')
+    const count = historyData.value[dateStr] || 0
+    const inMonth = isSameMonth(day, currentMonth.value)
+
     let status = 'neutral'
-    if (count > 0) status = 'good' 
-    // We don't track 'decay' events in heatmap yet, just activity
-    
+    if (count > 0) status = 'good'
+
     grid.push({
-      date: date,
-      dateStr: dateStr,
-      dayName: format(date, 'EEE'),
-      count: count,
-      status: status
+      date: new Date(day),
+      dateStr,
+      dayNum: format(day, 'd'),
+      count,
+      status,
+      inMonth,
+      isToday: isToday(day)
     })
+
+    day = addDays(day, 1)
   }
 
   history.value = grid
 }
 
 onMounted(() => {
-  loadHistory()
+  fetchHistory()
 })
 
-const getColor = (status) => {
-  if (status === 'good') return 'bg-emerald-500/50 border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-  if (status === 'bad') return 'bg-red-500/50 border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+// Live update when quests change
+watch(() => questStore.quests.length, () => {
+  fetchHistory()
+})
+
+const getColor = (day) => {
+  if (!day.inMonth) return 'bg-transparent border-transparent opacity-20'
+  if (day.status === 'good') return 'bg-emerald-500/50 border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+  if (day.status === 'bad') return 'bg-red-500/50 border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
   return 'bg-white/5 border-transparent'
 }
 </script>
 
 <template>
   <div class="flex flex-col h-full">
+    <!-- Month Header with Navigation -->
+    <div class="flex items-center justify-between mb-3">
+      <button @click="prevMonth" class="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+        <ChevronLeft class="w-4 h-4" />
+      </button>
+
+      <span class="text-sm font-bold text-white tracking-wide">{{ monthLabel }}</span>
+
+      <button @click="nextMonth" class="p-1 rounded hover:bg-white/10 transition-colors"
+        :class="canGoForward ? 'text-gray-400 hover:text-white' : 'text-gray-700 cursor-not-allowed'"
+        :disabled="!canGoForward">
+        <ChevronRight class="w-4 h-4" />
+      </button>
+    </div>
+
     <!-- Day Headers -->
-    <div class="grid grid-cols-7 gap-1 mb-2 text-center">
+    <div class="grid grid-cols-7 gap-1 mb-1 text-center">
       <span class="text-[10px] text-gray-500 uppercase">Mon</span>
       <span class="text-[10px] text-gray-500 uppercase">Tue</span>
       <span class="text-[10px] text-gray-500 uppercase">Wed</span>
@@ -72,32 +125,31 @@ const getColor = (status) => {
       <span class="text-[10px] text-gray-500 uppercase">Sun</span>
     </div>
 
-    <!-- Grid -->
+    <!-- Calendar Grid -->
     <div class="grid grid-cols-7 gap-1 content-start flex-1">
-      <div 
-        v-for="day in history" 
-        :key="day.dateStr"
-        class="aspect-square rounded-sm border transition-all duration-300 hover:scale-110 relative group"
-        :class="getColor(day.status)"
-      >
+      <div v-for="day in history" :key="day.dateStr"
+        class="aspect-square rounded-sm border transition-all duration-300 hover:scale-110 relative group flex items-center justify-center"
+        :class="[getColor(day), day.isToday ? 'ring-1 ring-astral-glow/60' : '']">
+        <!-- Day Number -->
+        <span v-if="day.inMonth" class="text-[9px] font-mono"
+          :class="day.status === 'good' ? 'text-emerald-200' : 'text-gray-600'">{{ day.dayNum }}</span>
+
         <!-- Tooltip -->
-        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black border border-white/10 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+        <div
+          class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black border border-white/10 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
           {{ day.dateStr }}
-          <span v-if="day.status === 'good'" class="text-emerald-400 block font-bold">Productive</span>
-          <span v-if="day.status === 'bad'" class="text-red-400 block font-bold">Decay</span>
+          <span v-if="day.count > 0" class="text-emerald-400 block font-bold">{{ day.count }} quest{{ day.count > 1 ?
+            's' : '' }}</span>
+          <span v-else-if="day.inMonth" class="text-gray-500 block">No activity</span>
         </div>
       </div>
     </div>
 
     <!-- Legend -->
-    <div class="flex items-center gap-4 mt-4 text-[10px] text-gray-400 uppercase tracking-widest justify-center">
+    <div class="flex items-center gap-4 mt-3 text-[10px] text-gray-400 uppercase tracking-widest justify-center">
       <div class="flex items-center gap-1.5">
         <div class="w-3 h-3 rounded-sm bg-emerald-500/50 border border-emerald-400/50"></div>
         <span>Active</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <div class="w-3 h-3 rounded-sm bg-red-500/50 border border-red-400/50"></div>
-        <span>Decay</span>
       </div>
       <div class="flex items-center gap-1.5">
         <div class="w-3 h-3 rounded-sm bg-white/5 border border-white/10"></div>
