@@ -17,6 +17,7 @@ const isProcessing = ref(false)
 const manualTitle = ref('')
 const manualXP = ref(20)
 const manualDate = ref('')
+const manualTime = ref('23:59')
 
 // Set default date to tomorrow on mount
 onMounted(() => {
@@ -55,7 +56,7 @@ const handleManualAdd = async () => {
   if (!isValidManual.value) return
 
   try {
-    const selectedDate = new Date(manualDate.value + 'T23:59:59')
+    const selectedDate = new Date(manualDate.value + 'T' + manualTime.value + ':00')
 
     await questStore.addQuest({
       title: manualTitle.value,
@@ -69,6 +70,7 @@ const handleManualAdd = async () => {
     manualXP.value = 20
     const tomorrow = addDays(new Date(), 1)
     manualDate.value = format(tomorrow, 'yyyy-MM-dd')
+    manualTime.value = '23:59'
   } catch (err) {
     console.error(err)
     alert("Failed to create quest: " + err.message)
@@ -129,6 +131,10 @@ const handleManualAdd = async () => {
         <!-- Date Picker -->
         <input v-model="manualDate" type="date"
           class="bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-astral-glow flex-1 min-w-[140px]" />
+
+        <!-- Time Picker -->
+        <input v-model="manualTime" type="time"
+          class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-astral-glow w-[110px]" />
 
         <button @click="handleManualAdd" :disabled="!isValidManual"
           class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"

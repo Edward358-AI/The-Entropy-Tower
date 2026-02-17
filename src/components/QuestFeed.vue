@@ -12,6 +12,7 @@ const editingId = ref(null)
 const editTitle = ref('')
 const editXP = ref(0)
 const editDeadline = ref('')
+const editTime = ref('23:59')
 
 onMounted(() => {
   questStore.loadQuests()
@@ -38,8 +39,10 @@ const startEdit = (quest) => {
   if (quest.deadline?.seconds) {
     const d = new Date(quest.deadline.seconds * 1000)
     editDeadline.value = format(d, 'yyyy-MM-dd')
+    editTime.value = format(d, 'HH:mm')
   } else {
     editDeadline.value = ''
+    editTime.value = '23:59'
   }
 }
 
@@ -48,6 +51,7 @@ const cancelEdit = () => {
   editTitle.value = ''
   editXP.value = 0
   editDeadline.value = ''
+  editTime.value = '23:59'
 }
 
 const saveEdit = async () => {
@@ -57,7 +61,7 @@ const saveEdit = async () => {
     xpReward: Number(editXP.value) || 10
   }
   if (editDeadline.value) {
-    updates.deadline = Timestamp.fromDate(new Date(editDeadline.value + 'T23:59:59'))
+    updates.deadline = Timestamp.fromDate(new Date(editDeadline.value + 'T' + editTime.value + ':00'))
   }
   await questStore.editQuest(editingId.value, updates)
   editingId.value = null
@@ -143,8 +147,12 @@ const saveEdit = async () => {
 
           <div>
             <label class="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Due Date</label>
-            <input v-model="editDeadline" @keyup.escape="cancelEdit" type="date"
-              class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors" />
+            <div class="flex gap-2">
+              <input v-model="editDeadline" @keyup.escape="cancelEdit" type="date"
+                class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors" />
+              <input v-model="editTime" @keyup.escape="cancelEdit" type="time"
+                class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors w-[110px]" />
+            </div>
           </div>
 
           <div class="flex items-center gap-2 pt-1">

@@ -61,6 +61,13 @@ export const useQuestStore = defineStore('quest', () => {
     }
     quests.value.push(tempQuest)
 
+    // Sort immediately so new quest slots into correct position
+    quests.value.sort((a, b) => {
+      const aTime = a.deadline?.seconds ?? Infinity
+      const bTime = b.deadline?.seconds ?? Infinity
+      return aTime - bTime
+    })
+
     playerStore.isSyncing = true
     try {
       const docRef = await withTimeout(addDoc(collection(db, 'users', auth.currentUser.uid, 'quests'), {
@@ -170,6 +177,13 @@ export const useQuestStore = defineStore('quest', () => {
 
     const originalData = { ...quest }
     Object.assign(quest, updates)
+
+    // Re-sort by deadline immediately
+    quests.value.sort((a, b) => {
+      const aTime = a.deadline?.seconds ?? Infinity
+      const bTime = b.deadline?.seconds ?? Infinity
+      return aTime - bTime
+    })
 
     playerStore.isSyncing = true
     try {
