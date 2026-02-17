@@ -14,6 +14,10 @@ export const usePlayerStore = defineStore('player', () => {
   const lastActiveDate = ref(null)
   const lastDecayDate = ref(null)
 
+  // Initialization gate — prevents saves from overwriting real data
+  let _resolveReady
+  const statsReady = new Promise(resolve => { _resolveReady = resolve })
+
   // Timeout wrapper — prevents Firebase from hanging forever when offline
   const withTimeout = (promise, ms = 10000) => {
     return Promise.race([
@@ -56,11 +60,11 @@ export const usePlayerStore = defineStore('player', () => {
 
       if (snap.exists()) {
         const data = snap.data()
-        level.value = data.level || 5
-        currentXP.value = data.currentXP || 50
-        streak.value = data.streak || 0
-        totalXPLost.value = data.totalXPLost || 0
-        isLevelCapped.value = data.isLevelCapped || false
+        level.value = data.level ?? 5
+        currentXP.value = data.currentXP ?? 50
+        streak.value = data.streak ?? 0
+        totalXPLost.value = data.totalXPLost ?? 0
+        isLevelCapped.value = data.isLevelCapped ?? false
         lastActiveDate.value = data.lastActiveDate || null
         lastDecayDate.value = data.lastDecayDate || null
       } else {
@@ -80,6 +84,7 @@ export const usePlayerStore = defineStore('player', () => {
       console.error("Failed to init stats:", err)
     } finally {
       loading.value = false
+      _resolveReady() // Unblock any pending saves
     }
   }
 
@@ -103,6 +108,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   const addXP = async (amount) => {
+    await statsReady // Wait for init to complete
     if (isLevelCapped.value) return // Boss Gate active
 
     currentXP.value += amount
@@ -135,6 +141,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   const applyDecay = async (amount) => {
+    await statsReady // Wait for init to complete
     currentXP.value -= amount
     totalXPLost.value += amount
 
@@ -153,6 +160,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   const saveStats = async () => {
+    await statsReady // Wait for init to complete
     if (!auth.currentUser) return
     isSyncing.value = true
     try {
