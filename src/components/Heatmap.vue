@@ -59,16 +59,21 @@ const buildGrid = () => {
   while (day <= calEnd) {
     const dateStr = format(day, 'yyyy-MM-dd')
     const count = historyData.value[dateStr] || 0
+    const missed = historyData.value[`missed_${dateStr}`] || 0
     const inMonth = isSameMonth(day, currentMonth.value)
 
+    // Determine status
     let status = 'neutral'
-    if (count > 0) status = 'good'
+    if (count > 0 && missed > 0) status = 'mixed'
+    else if (count > 0) status = 'good'
+    else if (missed > 0) status = 'bad'
 
     grid.push({
       date: new Date(day),
       dateStr,
       dayNum: format(day, 'd'),
       count,
+      missed,
       status,
       inMonth,
       isToday: isToday(day)
@@ -91,9 +96,17 @@ watch(() => questStore.quests.length, () => {
 
 const getColor = (day) => {
   if (!day.inMonth) return 'bg-transparent border-transparent opacity-20'
+  if (day.status === 'mixed') return 'heatmap-mixed border-yellow-400/50'
   if (day.status === 'good') return 'bg-emerald-500/50 border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-  if (day.status === 'bad') return 'bg-red-500/50 border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+  if (day.status === 'bad') return 'bg-red-500/40 border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
   return 'bg-white/5 border-transparent'
+}
+
+const getTextColor = (day) => {
+  if (day.status === 'good') return 'text-emerald-200'
+  if (day.status === 'bad') return 'text-red-300'
+  if (day.status === 'mixed') return 'text-yellow-200'
+  return 'text-gray-600'
 }
 </script>
 
@@ -132,29 +145,39 @@ const getColor = (day) => {
         :class="[getColor(day), day.isToday ? 'ring-1 ring-astral-glow/60' : '']">
         <!-- Day Number -->
         <span v-if="day.inMonth" class="text-[9px] font-mono"
-          :class="day.status === 'good' ? 'text-emerald-200' : 'text-gray-600'">{{ day.dayNum }}</span>
+          :class="getTextColor(day)">{{ day.dayNum }}</span>
 
         <!-- Tooltip -->
         <div
           class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black border border-white/10 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
           {{ day.dateStr }}
-          <span v-if="day.count > 0" class="text-emerald-400 block font-bold">{{ day.count }} quest{{ day.count > 1 ?
-            's' : '' }}</span>
-          <span v-else-if="day.inMonth" class="text-gray-500 block">No activity</span>
+          <span v-if="day.count > 0" class="text-emerald-400 block font-bold">✓ {{ day.count }} completed</span>
+          <span v-if="day.missed > 0" class="text-red-400 block font-bold">✗ {{ day.missed }} missed</span>
+          <span v-if="day.count === 0 && day.missed === 0 && day.inMonth" class="text-gray-500 block">No activity</span>
         </div>
       </div>
     </div>
 
     <!-- Legend -->
-    <div class="flex items-center gap-4 mt-3 text-[10px] text-gray-400 uppercase tracking-widest justify-center">
+    <div class="flex items-center gap-3 mt-3 text-[10px] text-gray-400 uppercase tracking-widest justify-center flex-wrap">
       <div class="flex items-center gap-1.5">
         <div class="w-3 h-3 rounded-sm bg-emerald-500/50 border border-emerald-400/50"></div>
-        <span>Active</span>
+        <span>Completed</span>
       </div>
       <div class="flex items-center gap-1.5">
-        <div class="w-3 h-3 rounded-sm bg-white/5 border border-white/10"></div>
-        <span>Inactive</span>
+        <div class="w-3 h-3 rounded-sm bg-red-500/40 border border-red-400/50"></div>
+        <span>Missed</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="w-3 h-3 rounded-sm heatmap-mixed border border-yellow-400/50"></div>
+        <span>Mixed</span>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.heatmap-mixed {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.5) 50%, rgba(239, 68, 68, 0.5) 50%);
+}
+</style>

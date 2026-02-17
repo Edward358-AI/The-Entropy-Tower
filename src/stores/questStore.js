@@ -39,7 +39,10 @@ export const useQuestStore = defineStore('quest', () => {
         })
 
       // Check for decay on load
-      checkDecay()
+      await checkDecay()
+
+      // Compute streak from history
+      await computeStreak()
     } catch (err) {
       console.error("Failed to load quests:", err)
     } finally {
@@ -143,6 +146,9 @@ export const useQuestStore = defineStore('quest', () => {
         [todayStr]: increment(1)
       }, { merge: true }))
 
+      // Recompute streak after logging completion
+      await computeStreak()
+
     } catch (err) {
       console.error("Failed to complete quest:", err)
       // Ideally revert here, but for now just log
@@ -207,6 +213,7 @@ export const useQuestStore = defineStore('quest', () => {
 
     const now = new Date()
     let totalPenalty = 0
+    const missedDates = {}
 
     for (const quest of quests.value) {
       if (!quest.deadline) continue
@@ -220,6 +227,10 @@ export const useQuestStore = defineStore('quest', () => {
         totalPenalty += penalty
         quest.daysOverdue = daysUpdate
 
+        // Track the deadline date as a missed date for heatmap
+        const dlStr = `${deadline.getFullYear()}-${String(deadline.getMonth() + 1).padStart(2, '0')}-${String(deadline.getDate()).padStart(2, '0')}`
+        missedDates[`missed_${dlStr}`] = increment(1)
+
         if (daysUpdate >= 5) {
           quest.status = 'corrupted'
         }
@@ -227,10 +238,60 @@ export const useQuestStore = defineStore('quest', () => {
     }
 
     if (totalPenalty > 0) {
+      // Reset streak when quests are overdue
+      playerStore.streak = 0
       await playerStore.applyDecay(totalPenalty)
+
+      // Log missed dates to heatmap history
+      if (auth.currentUser && Object.keys(missedDates).length > 0) {
+        try {
+          const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
+          await withTimeout(setDoc(historyRef, missedDates, { merge: true }))
+        } catch (err) {
+          console.error("Failed to log missed dates:", err)
+        }
+      }
     } else {
       // Still save the lastDecayDate even if no penalty
       await playerStore.saveStats()
+    }
+  }
+
+  // Compute streak from heatmap history data
+  const computeStreak = async () => {
+    if (!auth.currentUser) return
+    try {
+      const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
+      const snap = await withTimeout(getDoc(historyRef))
+      if (!snap.exists()) return
+
+      const data = snap.data()
+      let streak = 0
+      const today = new Date()
+
+      // Count consecutive days backward from today/yesterday
+      for (let i = 0; i <= 365; i++) {
+        const d = new Date(today)
+        d.setDate(d.getDate() - i)
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+        const completed = data[dateStr] || 0
+        const missed = data[`missed_${dateStr}`] || 0
+
+        if (completed > 0 && missed === 0) {
+          streak++
+        } else if (i === 0 && completed === 0) {
+          // Today has no activity yet — check from yesterday
+          continue
+        } else {
+          break
+        }
+      }
+
+      playerStore.streak = streak
+      await playerStore.saveStats()
+    } catch (err) {
+      console.error("Failed to compute streak:", err)
     }
   }
 
@@ -242,6 +303,7 @@ export const useQuestStore = defineStore('quest', () => {
     completeQuest,
     deleteQuest,
     editQuest,
-    checkDecay
+    checkDecay,
+    computeStreak
   }
 })
