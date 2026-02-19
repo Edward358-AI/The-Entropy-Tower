@@ -147,11 +147,11 @@ const saveEdit = async () => {
 
           <div>
             <label class="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Due Date</label>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
               <input v-model="editDeadline" @keyup.escape="cancelEdit" type="date"
-                class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors" />
+                class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors flex-1 min-w-[120px]" />
               <input v-model="editTime" @keyup.escape="cancelEdit" type="time"
-                class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors w-[110px]" />
+                class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-astral-glow/50 transition-colors w-[100px]" />
             </div>
           </div>
 

@@ -16,7 +16,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-astral-void text-astral-star font-sans antialiased overflow-hidden">
+  <div class="min-h-screen bg-astral-void text-astral-star font-sans antialiased">
     <!-- Starfield Background (Global) -->
     <div class="fixed inset-0 z-0 pointer-events-none">
       <div class="absolute inset-0 bg-[url('/stars.png')] opacity-50 animate-pulse-slow"></div>
@@ -33,7 +33,7 @@ onMounted(() => {
     </div>
 
     <!-- Main Content -->
-    <div class="relative z-10 h-screen flex flex-col">
+    <div class="relative z-10 min-h-screen flex flex-col">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />

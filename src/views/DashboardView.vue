@@ -25,11 +25,11 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full">
+  <div class="min-h-screen flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full">
     <!-- Header -->
-    <header class="flex justify-between items-center mb-6">
+    <header class="flex justify-between items-center mb-4 md:mb-6">
       <div>
-        <h1 class="text-2xl font-bold font-display text-white">Entropy Tower</h1>
+        <h1 class="text-xl md:text-2xl font-bold font-display text-white">Entropy Tower</h1>
         <div class="flex items-center gap-2 text-sm text-gray-400">
           <span>Streak: <span class="text-astral-glow font-bold">{{ playerStore.streak }} days</span></span>
           <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 7 ? '1.5' : playerStore.streak >= 3 ? '1.2' : '1.0' }}</span>
@@ -45,25 +45,30 @@ const handleLogout = async () => {
       </button>
     </header>
 
+    <!-- Mobile: Tower as compact horizontal bar -->
+    <div class="md:hidden mb-4">
+      <TheTower layout="horizontal" />
+    </div>
+
     <!-- Main Grid -->
-    <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-6 min-h-0">
+    <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
       
       <!-- Left Panel: Quest Feed -->
-      <div class="md:col-span-4 flex flex-col gap-6 min-h-0">
+      <div class="md:col-span-4 flex flex-col gap-4 md:gap-6">
         <AddGoal />
-        <div class="flex-1 bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col min-h-0">
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>
-          <QuestFeed class="flex-1" />
+          <QuestFeed />
         </div>
       </div>
 
-      <!-- Center Panel: The Tower -->
-      <div class="md:col-span-4 flex flex-col justify-end pb-8">
-        <TheTower />
+      <!-- Center Panel: The Tower (desktop only) -->
+      <div class="hidden md:flex md:col-span-4 flex-col justify-center">
+        <TheTower layout="vertical" />
       </div>
 
       <!-- Right Panel: Stats & History -->
-      <div class="md:col-span-4 flex flex-col gap-6">
+      <div class="md:col-span-4 flex flex-col gap-4 md:gap-6">
         <!-- Stats Card -->
         <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
           <h2 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Vital Signs</h2>
@@ -80,7 +85,7 @@ const handleLogout = async () => {
         </div>
 
         <!-- Heatmap -->
-        <div class="flex-1 bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
           <Heatmap />
         </div>

@@ -120,27 +120,28 @@ const handleManualAdd = async () => {
       <input v-model="manualTitle" @keyup.enter="handleManualAdd" type="text" placeholder="Quest Title (Required)"
         class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-astral-glow transition-all placeholder-gray-600" />
 
-      <div class="flex flex-wrap gap-2">
+      <div class="grid grid-cols-[1fr_auto] gap-2">
         <!-- Custom XP Input -->
-        <div class="relative w-32 flex-shrink-0">
+        <div class="relative">
           <input v-model="manualXP" type="number" min="1" placeholder="XP"
             class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-astral-glow" />
           <span class="absolute right-3 top-2 text-xs text-gray-500 font-bold pointer-events-none">XP</span>
         </div>
 
-        <!-- Date Picker -->
-        <input v-model="manualDate" type="date"
-          class="bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-astral-glow flex-1 min-w-[140px]" />
-
-        <!-- Time Picker -->
-        <input v-model="manualTime" type="time"
-          class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-astral-glow w-[110px]" />
-
+        <!-- Add Button -->
         <button @click="handleManualAdd" :disabled="!isValidManual"
-          class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+          class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2 row-span-2"
           :class="isValidManual ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'">
           <Plus class="w-5 h-5" />
         </button>
+
+        <!-- Date & Time Row -->
+        <div class="flex gap-2">
+          <input v-model="manualDate" type="date"
+            class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-astral-glow flex-1 min-w-0" />
+          <input v-model="manualTime" type="time"
+            class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-astral-glow w-[100px]" />
+        </div>
       </div>
     </div>
   </div>

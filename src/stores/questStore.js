@@ -10,6 +10,7 @@ import { usePlayerStore } from './playerStore'
 export const useQuestStore = defineStore('quest', () => {
   const quests = ref([])
   const loading = ref(false)
+  const heatmapVersion = ref(0) // Bumped after heatmap writes to trigger UI refresh
   const playerStore = usePlayerStore()
 
   // Timeout wrapper — prevents Firebase from hanging forever when offline
@@ -149,6 +150,9 @@ export const useQuestStore = defineStore('quest', () => {
       // Recompute streak after logging completion
       await computeStreak()
 
+      // Signal heatmap to refresh
+      heatmapVersion.value++
+
     } catch (err) {
       console.error("Failed to complete quest:", err)
       // Ideally revert here, but for now just log
@@ -247,6 +251,9 @@ export const useQuestStore = defineStore('quest', () => {
         try {
           const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
           await withTimeout(setDoc(historyRef, missedDates, { merge: true }))
+
+          // Signal heatmap to refresh
+          heatmapVersion.value++
         } catch (err) {
           console.error("Failed to log missed dates:", err)
         }
@@ -298,6 +305,7 @@ export const useQuestStore = defineStore('quest', () => {
   return {
     quests,
     loading,
+    heatmapVersion,
     loadQuests,
     addQuest,
     completeQuest,

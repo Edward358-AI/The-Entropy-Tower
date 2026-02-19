@@ -89,8 +89,8 @@ onMounted(() => {
   fetchHistory()
 })
 
-// Live update when quests change
-watch(() => questStore.quests.length, () => {
+// Live update after heatmap data is written
+watch(() => questStore.heatmapVersion, () => {
   fetchHistory()
 })
 
