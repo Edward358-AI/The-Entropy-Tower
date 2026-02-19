@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
+import { useQuestStore } from '../stores/questStore'
 
 const props = defineProps({
   layout: {
@@ -10,6 +11,7 @@ const props = defineProps({
 })
 
 const playerStore = usePlayerStore()
+const questStore = useQuestStore()
 
 // Calculate progress based on current XP within level
 const progressPercent = computed(() => {
@@ -31,6 +33,8 @@ const materialClass = computed(() => {
 })
 
 const isHorizontal = computed(() => props.layout === 'horizontal')
+
+const hasOverdueQuests = computed(() => questStore.quests.some(q => q.daysOverdue > 0))
 </script>
 
 <template>
@@ -63,7 +67,7 @@ const isHorizontal = computed(() => props.layout === 'horizontal')
     </div>
 
     <!-- Entropy indicator -->
-    <div v-if="playerStore.totalXPLost > 0" class="mt-2 text-center text-[10px] text-red-400 font-bold animate-pulse">
+    <div     v-if="hasOverdueQuests" class="mt-2 text-center text-[10px] text-red-400 font-bold animate-pulse">
       ENTROPY DETECTED
     </div>
   </div>
@@ -92,7 +96,7 @@ const isHorizontal = computed(() => props.layout === 'horizontal')
 
     <!-- Entropy Cracks -->
     <div 
-      v-if="playerStore.totalXPLost > 0"
+          v-if="hasOverdueQuests"
       class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-red-900/50 to-transparent pointer-events-none"
     >
       <div class="absolute bottom-2 left-0 right-0 text-center text-xs text-red-400 font-bold animate-pulse">
