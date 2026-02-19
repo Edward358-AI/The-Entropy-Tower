@@ -11,6 +11,7 @@ const questStore = useQuestStore()
 const history = ref([])
 const currentMonth = ref(new Date())
 const historyData = ref({})
+const selectedDay = ref(null) // For click-to-show tooltip on mobile
 
 const monthLabel = computed(() => format(currentMonth.value, 'MMMM yyyy'))
 
@@ -21,14 +22,21 @@ const canGoForward = computed(() => {
 
 const prevMonth = () => {
   currentMonth.value = subMonths(currentMonth.value, 1)
+  selectedDay.value = null
   buildGrid()
 }
 
 const nextMonth = () => {
   if (canGoForward.value) {
     currentMonth.value = addMonths(currentMonth.value, 1)
+    selectedDay.value = null
     buildGrid()
   }
+}
+
+const toggleDay = (day) => {
+  if (!day.inMonth) return
+  selectedDay.value = selectedDay.value === day.dateStr ? null : day.dateStr
 }
 
 const fetchHistory = async () => {
@@ -141,15 +149,17 @@ const getTextColor = (day) => {
     <!-- Calendar Grid -->
     <div class="grid grid-cols-7 gap-1 content-start flex-1">
       <div v-for="day in history" :key="day.dateStr"
-        class="aspect-square rounded-sm border transition-all duration-300 hover:scale-110 relative group flex items-center justify-center"
+        @click="toggleDay(day)"
+        class="aspect-square rounded-sm border transition-all duration-300 hover:scale-110 relative group flex items-center justify-center cursor-pointer"
         :class="[getColor(day), day.isToday ? 'ring-1 ring-astral-glow/60' : '']">
         <!-- Day Number -->
         <span v-if="day.inMonth" class="text-[9px] font-mono"
           :class="getTextColor(day)">{{ day.dayNum }}</span>
 
-        <!-- Tooltip -->
+        <!-- Tooltip (hover on desktop, click on mobile) -->
         <div
-          class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black border border-white/10 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+          class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black border border-white/10 rounded text-xs whitespace-nowrap transition-opacity pointer-events-none z-10"
+          :class="selectedDay === day.dateStr ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
           {{ day.dateStr }}
           <span v-if="day.count > 0" class="text-emerald-400 block font-bold">✓ {{ day.count }} completed</span>
           <span v-if="day.missed > 0" class="text-red-400 block font-bold">✗ {{ day.missed }} missed</span>
