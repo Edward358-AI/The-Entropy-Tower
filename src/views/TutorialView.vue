@@ -1,0 +1,232 @@
+<script setup>
+import { useRouter } from 'vue-router'
+import { ArrowLeft, Swords, TrendingUp, Flame, CalendarDays, Shield, Zap, Clock, Brain, Star } from 'lucide-vue-next'
+
+const router = useRouter()
+</script>
+
+<template>
+  <div class="min-h-screen">
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-20 bg-astral-void/90 backdrop-blur-md border-b border-white/5">
+      <div class="max-w-3xl mx-auto px-6 py-3 flex items-center gap-3">
+        <button @click="router.push('/dashboard')"
+          class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+          <ArrowLeft class="w-4 h-4" />
+          Back to Dashboard
+        </button>
+      </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-6 py-10">
+      <!-- Title -->
+      <div class="mb-12 text-center">
+        <h1 class="text-3xl md:text-4xl font-display font-bold text-white mb-3">How Entropy Tower Works</h1>
+        <p class="text-gray-400 text-lg">A complete guide to the quest, leveling, and decay systems.</p>
+      </div>
+
+      <!-- Section: Quests -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-astral-glow/10">
+            <Swords class="w-5 h-5 text-astral-glow" />
+          </div>
+          <h2 class="text-xl font-bold text-white">Quests</h2>
+        </div>
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-4">
+          <div>
+            <h3 class="text-white font-bold mb-1 flex items-center gap-2">
+              <Brain class="w-4 h-4 text-path-preservation" /> AI Assist
+            </h3>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              Describe what you need to accomplish and AI will generate structured quests for you, each with a title, XP reward, and deadline. Great for breaking large projects into actionable steps.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-white font-bold mb-1 flex items-center gap-2">
+              <Star class="w-4 h-4 text-path-erudition" /> Manual Override
+            </h3>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              Create quests manually by entering a title, XP value, due date, and time. The deadline time matters — your quest goes overdue at the exact time you set, not just at end of day.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-white font-bold mb-1 flex items-center gap-2">
+              <Clock class="w-4 h-4 text-path-harmony" /> Deadline Behavior
+            </h3>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              Quests are sorted by deadline (soonest first). When you complete a quest, you earn XP and it's logged to your heatmap. You can also edit or delete quests at any time.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: XP & Leveling -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-path-erudition/10">
+            <TrendingUp class="w-5 h-5 text-path-erudition" />
+          </div>
+          <h2 class="text-xl font-bold text-white">XP & Leveling</h2>
+        </div>
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-3 text-sm text-gray-400 leading-relaxed">
+          <p>Completing quests earns you <span class="text-path-erudition font-bold">XP</span>. XP fills your tower, and when it reaches the threshold, you level up.</p>
+          <div class="bg-black/20 rounded-lg p-4 font-mono text-xs text-gray-300">
+            XP to next level = 100 + (Current Level × 20)
+          </div>
+          <p>As you level up, your tower progresses through <span class="font-bold text-white">material ages</span>:</p>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
+            <div class="bg-gray-600/20 border border-gray-500/30 rounded-lg p-3 text-center">
+              <div class="text-xs text-gray-300 font-bold">Stone</div>
+              <div class="text-[10px] text-gray-500">Lv 1–9</div>
+            </div>
+            <div class="bg-slate-400/20 border border-slate-400/30 rounded-lg p-3 text-center">
+              <div class="text-xs text-slate-300 font-bold">Iron</div>
+              <div class="text-[10px] text-gray-500">Lv 10–19</div>
+            </div>
+            <div class="bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-3 text-center">
+              <div class="text-xs text-yellow-300 font-bold">Gold</div>
+              <div class="text-[10px] text-gray-500">Lv 20–29</div>
+            </div>
+            <div class="bg-cyan-400/20 border border-cyan-400/30 rounded-lg p-3 text-center">
+              <div class="text-xs text-cyan-300 font-bold">Diamond</div>
+              <div class="text-[10px] text-gray-500">Lv 30–39</div>
+            </div>
+            <div class="bg-astral-glow/20 border border-astral-glow/30 rounded-lg p-3 text-center col-span-2 sm:col-span-1">
+              <div class="text-xs text-astral-glow font-bold">Astral</div>
+              <div class="text-[10px] text-gray-500">Lv 40+</div>
+            </div>
+          </div>
+          <p>If decay pushes your XP below zero, you <span class="text-red-400 font-bold">de-level</span>. Your tower literally crumbles.</p>
+        </div>
+      </section>
+
+      <!-- Section: Decay & Entropy -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-red-500/10">
+            <Flame class="w-5 h-5 text-red-400" />
+          </div>
+          <h2 class="text-xl font-bold text-white">Decay & Entropy</h2>
+        </div>
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-3 text-sm text-gray-400 leading-relaxed">
+          <p>When a quest goes past its deadline time, <span class="text-red-400 font-bold">entropy</span> kicks in. XP is deducted and your streak is reset to zero.</p>
+          <div>
+            <p class="font-bold text-white mb-2">Penalty escalation (per overdue quest):</p>
+            <div class="bg-black/20 rounded-lg p-4 font-mono text-xs text-gray-300">
+              Penalty = 50 × 2^(days - 1)
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
+              <div class="text-red-400 font-bold">Day 1</div>
+              <div class="text-xs text-gray-500">−50 XP</div>
+            </div>
+            <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
+              <div class="text-red-400 font-bold">Day 2</div>
+              <div class="text-xs text-gray-500">−100 XP</div>
+            </div>
+            <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
+              <div class="text-red-400 font-bold">Day 3</div>
+              <div class="text-xs text-gray-500">−200 XP</div>
+            </div>
+            <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
+              <div class="text-red-400 font-bold">Day 5+</div>
+              <div class="text-xs text-gray-500">CORRUPTED</div>
+            </div>
+          </div>
+          <p class="mt-2">
+            <span class="text-white font-bold">First-hit penalty:</span> The first decay penalty applies at the 
+            <span class="text-astral-glow">exact deadline time</span> you set. After that, further escalation follows the standard daily schedule.
+          </p>
+          <p>After 5 days overdue, the quest becomes <span class="text-red-400 font-bold">corrupted</span> — shown with a red border and maximum urgency.</p>
+        </div>
+      </section>
+
+      <!-- Section: Streaks & Multipliers -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-path-abundance/10">
+            <Zap class="w-5 h-5 text-path-abundance" />
+          </div>
+          <h2 class="text-xl font-bold text-white">Streaks & Multipliers</h2>
+        </div>
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-3 text-sm text-gray-400 leading-relaxed">
+          <p>Your streak counts <span class="text-white font-bold">consecutive days</span> with at least one completed quest and <span class="text-white font-bold">no missed deadlines</span>.</p>
+          <p>The streak is computed from your heatmap history — counting back from today. If today has no activity yet, it counts from yesterday.</p>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <div class="bg-white/5 border border-white/10 rounded-lg p-3 text-center">
+              <div class="text-white font-bold">0–2 days</div>
+              <div class="text-xs text-gray-500">×1.0 multiplier</div>
+            </div>
+            <div class="bg-path-abundance/10 border border-path-abundance/20 rounded-lg p-3 text-center">
+              <div class="text-path-abundance font-bold">3–6 days</div>
+              <div class="text-xs text-gray-500">×1.2 multiplier</div>
+            </div>
+            <div class="bg-path-erudition/10 border border-path-erudition/20 rounded-lg p-3 text-center">
+              <div class="text-path-erudition font-bold">7+ days</div>
+              <div class="text-xs text-gray-500">×1.5 multiplier</div>
+            </div>
+          </div>
+          <p>Any overdue quest <span class="text-red-400 font-bold">immediately resets</span> your streak to zero.</p>
+        </div>
+      </section>
+
+      <!-- Section: Boss Gates -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-path-preservation/10">
+            <Shield class="w-5 h-5 text-path-preservation" />
+          </div>
+          <h2 class="text-xl font-bold text-white">Boss Gates</h2>
+        </div>
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-3 text-sm text-gray-400 leading-relaxed">
+          <p>Every <span class="text-white font-bold">10 levels</span> (Level 19, 29, 39...), your XP is capped and a <span class="text-red-400 font-bold">Gatekeeper</span> appears.</p>
+          <p>When the Boss Gate is active:</p>
+          <ul class="list-disc list-inside space-y-1 ml-2">
+            <li>XP from completing quests is <span class="text-white font-bold">blocked</span></li>
+            <li>A fullscreen overlay demands you slay the Gatekeeper</li>
+            <li>You need a quest marked as a <span class="text-astral-glow font-bold">Boss Quest</span> to proceed</li>
+          </ul>
+          <p>Complete the boss quest and click <span class="text-white font-bold">"SLAY GATEKEEPER"</span> to ascend to the next level and continue earning XP.</p>
+        </div>
+      </section>
+
+      <!-- Section: Heatmap -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-path-harmony/10">
+            <CalendarDays class="w-5 h-5 text-path-harmony" />
+          </div>
+          <h2 class="text-xl font-bold text-white">Consistency Heatmap</h2>
+        </div>
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-3 text-sm text-gray-400 leading-relaxed">
+          <p>The heatmap shows your activity calendar by month. Each day is color-coded:</p>
+          <div class="flex flex-wrap items-center gap-4 mt-2">
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 rounded-sm bg-emerald-500/50 border border-emerald-400/50"></div>
+              <span class="text-xs text-gray-300">Completed quests only</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 rounded-sm bg-red-500/40 border border-red-400/50"></div>
+              <span class="text-xs text-gray-300">Missed deadlines only</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 rounded-sm border border-yellow-400/50" style="background: linear-gradient(135deg, rgba(16,185,129,0.5) 50%, rgba(239,68,68,0.5) 50%)"></div>
+              <span class="text-xs text-gray-300">Both completed & missed</span>
+            </div>
+          </div>
+          <p class="mt-2">Click (or tap on mobile) any day to see the exact count of completed and missed quests. Navigate between months using the arrow buttons.</p>
+        </div>
+      </section>
+
+      <!-- Bottom CTA -->
+      <div class="text-center pt-4 pb-8">
+        <button @click="router.push('/dashboard')"
+          class="bg-astral-glow hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all hover:scale-105 shadow-lg shadow-astral-glow/20">
+          Return to Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+</template>

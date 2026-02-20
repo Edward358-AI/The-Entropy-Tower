@@ -1,13 +1,21 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { ArrowLeft } from 'lucide-vue-next'
 
 const isLogin = ref(true)
 const email = ref('')
 const password = ref('')
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+
+onMounted(() => {
+  if (route.query.mode === 'signup') {
+    isLogin.value = false
+  }
+})
 
 const handleSubmit = async () => {
   try {
@@ -16,7 +24,7 @@ const handleSubmit = async () => {
     } else {
       await authStore.signUp(email.value, password.value)
     }
-    router.push('/')
+    router.push('/dashboard')
   } catch (e) {
     console.error(e)
   }
@@ -24,7 +32,14 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4">
+  <div class="min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- Back to Home -->
+    <router-link to="/"
+      class="absolute top-6 left-6 flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+      <ArrowLeft class="w-4 h-4" />
+      Home
+    </router-link>
+
     <div
       class="w-full max-w-md bg-astral-nebula/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
       <!-- Glow Effect -->

@@ -8,7 +8,7 @@ import QuestFeed from '../components/QuestFeed.vue'
 import AddGoal from '../components/AddGoal.vue'
 import Heatmap from '../components/Heatmap.vue'
 import BossGate from '../components/BossGate.vue'
-import { LogOut, Plus, Swords, CalendarDays } from 'lucide-vue-next'
+import { LogOut, Plus, Swords, CalendarDays, BookOpen } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const playerStore = usePlayerStore()
@@ -23,33 +23,40 @@ onMounted(() => {
 
 const handleLogout = async () => {
   await authStore.signOut()
-  router.push('/auth')
+  router.push('/')
 }
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full">
+  <div class="min-h-screen flex flex-col p-4 desk:p-8 max-w-6xl mx-auto w-full">
     <!-- Header -->
-    <header class="flex justify-between items-center mb-4 md:mb-6">
+    <header class="flex justify-between items-center mb-4 desk:mb-6">
       <div>
-        <h1 class="text-xl md:text-2xl font-bold font-display text-white">Entropy Tower</h1>
+        <h1 class="text-xl desk:text-2xl font-bold font-display text-white">Entropy Tower</h1>
         <div class="flex items-center gap-2 text-sm text-gray-400">
           <span>Streak: <span class="text-astral-glow font-bold">{{ playerStore.streak }} days</span></span>
           <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 7 ? '1.5' : playerStore.streak >= 3 ? '1.2' : '1.0' }}</span>
         </div>
       </div>
       
-      <button 
-        @click="handleLogout"
-        class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
-        title="Sign Out"
-      >
-        <LogOut class="w-5 h-5" />
-      </button>
+      <div class="flex items-center gap-1">
+        <router-link to="/tutorial"
+          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+          title="Tutorial">
+          <BookOpen class="w-5 h-5" />
+        </router-link>
+        <button 
+          @click="handleLogout"
+          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+          title="Sign Out"
+        >
+          <LogOut class="w-5 h-5" />
+        </button>
+      </div>
     </header>
 
     <!-- ==================== MOBILE LAYOUT ==================== -->
-    <div class="md:hidden flex flex-col gap-3 flex-1">
+    <div class="desk:hidden flex flex-col gap-3">
       <!-- Vital Signs (compact) -->
       <div class="bg-astral-nebula/30 border border-white/5 rounded-xl px-4 py-3">
         <div class="flex items-center justify-between">
@@ -90,7 +97,7 @@ const handleLogout = async () => {
       </div>
 
       <!-- Tab Content -->
-      <div class="flex-1">
+      <div>
         <!-- Add Quest Tab -->
         <div v-if="activeTab === 'add'">
           <AddGoal />
@@ -115,12 +122,12 @@ const handleLogout = async () => {
     </div>
 
     <!-- ==================== DESKTOP LAYOUT ==================== -->
-    <div class="hidden md:grid flex-1 grid-cols-12 gap-6">
+    <div class="hidden desk:grid grid-cols-12 gap-6">
       
       <!-- Left Panel: Quest Feed -->
       <div class="col-span-4 flex flex-col gap-6">
         <AddGoal />
-        <div class="flex-1 bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col min-h-0">
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>
           <QuestFeed class="flex-1" />
         </div>
@@ -149,7 +156,7 @@ const handleLogout = async () => {
         </div>
 
         <!-- Heatmap -->
-        <div class="flex-1 bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
           <Heatmap />
         </div>

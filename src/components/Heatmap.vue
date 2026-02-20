@@ -119,7 +119,7 @@ const getTextColor = (day) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col">
     <!-- Month Header with Navigation -->
     <div class="flex items-center justify-between mb-3">
       <button @click="prevMonth" class="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
@@ -147,14 +147,12 @@ const getTextColor = (day) => {
     </div>
 
     <!-- Calendar Grid -->
-    <div class="grid grid-cols-7 gap-1 content-start flex-1">
-      <div v-for="day in history" :key="day.dateStr"
-        @click="toggleDay(day)"
+    <div class="grid grid-cols-7 gap-1 content-start">
+      <div v-for="day in history" :key="day.dateStr" @click="toggleDay(day)"
         class="aspect-square rounded-sm border transition-all duration-300 hover:scale-110 relative group flex items-center justify-center cursor-pointer"
         :class="[getColor(day), day.isToday ? 'ring-1 ring-astral-glow/60' : '']">
         <!-- Day Number -->
-        <span v-if="day.inMonth" class="text-[9px] font-mono"
-          :class="getTextColor(day)">{{ day.dayNum }}</span>
+        <span v-if="day.inMonth" class="text-[9px] font-mono" :class="getTextColor(day)">{{ day.dayNum }}</span>
 
         <!-- Tooltip (hover on desktop, click on mobile) -->
         <div
@@ -169,7 +167,8 @@ const getTextColor = (day) => {
     </div>
 
     <!-- Legend -->
-    <div class="flex items-center gap-3 mt-3 text-[10px] text-gray-400 uppercase tracking-widest justify-center flex-wrap">
+    <div
+      class="flex items-center gap-3 mt-3 text-[10px] text-gray-400 uppercase tracking-widest justify-center flex-wrap">
       <div class="flex items-center gap-1.5">
         <div class="w-3 h-3 rounded-sm bg-emerald-500/50 border border-emerald-400/50"></div>
         <span>Completed</span>

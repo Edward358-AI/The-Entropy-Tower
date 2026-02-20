@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'desk': '950px',
+      },
       colors: {
         astral: {
           void: '#0a0a1a',    // Deep background
