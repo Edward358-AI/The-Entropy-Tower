@@ -8,7 +8,8 @@ import QuestFeed from '../components/QuestFeed.vue'
 import AddGoal from '../components/AddGoal.vue'
 import Heatmap from '../components/Heatmap.vue'
 import BossGate from '../components/BossGate.vue'
-import { LogOut, Plus, Swords, CalendarDays, BookOpen } from 'lucide-vue-next'
+import ThemePicker from '../components/ThemePicker.vue'
+import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const playerStore = usePlayerStore()
@@ -16,6 +17,7 @@ const router = useRouter()
 
 // Mobile tab state
 const activeTab = ref('quests') // 'add' | 'quests' | 'history'
+const showThemePicker = ref(false)
 
 onMounted(() => {
   playerStore.initStats()
@@ -35,21 +37,22 @@ const handleLogout = async () => {
         <h1 class="text-xl desk:text-2xl font-bold font-display text-white">Entropy Tower</h1>
         <div class="flex items-center gap-2 text-sm text-gray-400">
           <span>Streak: <span class="text-astral-glow font-bold">{{ playerStore.streak }} days</span></span>
-          <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 7 ? '1.5' : playerStore.streak >= 3 ? '1.2' : '1.0' }}</span>
+          <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 7 ? '1.5' :
+            playerStore.streak >= 3 ? '1.2' : '1.0' }}</span>
         </div>
       </div>
-      
+
       <div class="flex items-center gap-1">
+        <button @click="showThemePicker = true"
+          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Themes">
+          <Palette class="w-5 h-5" />
+        </button>
         <router-link to="/tutorial"
-          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
-          title="Tutorial">
+          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Tutorial">
           <BookOpen class="w-5 h-5" />
         </router-link>
-        <button 
-          @click="handleLogout"
-          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
-          title="Sign Out"
-        >
+        <button @click="handleLogout"
+          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Sign Out">
           <LogOut class="w-5 h-5" />
         </button>
       </div>
@@ -62,7 +65,8 @@ const handleLogout = async () => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
             <span class="text-gray-400 text-sm">XP</span>
-            <span class="font-mono text-lg text-white">{{ Math.floor(playerStore.currentXP) }} <span class="text-xs text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
+            <span class="font-mono text-lg text-white">{{ Math.floor(playerStore.currentXP) }} <span
+                class="text-xs text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
           </div>
           <div class="flex items-center gap-4">
             <span class="text-gray-400 text-sm">Entropy</span>
@@ -123,7 +127,7 @@ const handleLogout = async () => {
 
     <!-- ==================== DESKTOP LAYOUT ==================== -->
     <div class="hidden desk:grid grid-cols-12 gap-6">
-      
+
       <!-- Left Panel: Quest Feed -->
       <div class="col-span-4 flex flex-col gap-6">
         <AddGoal />
@@ -146,7 +150,8 @@ const handleLogout = async () => {
           <div class="space-y-4">
             <div class="flex justify-between">
               <span class="text-gray-400">Current XP</span>
-              <span class="font-mono text-xl">{{ Math.floor(playerStore.currentXP) }} <span class="text-sm text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
+              <span class="font-mono text-xl">{{ Math.floor(playerStore.currentXP) }} <span
+                  class="text-sm text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-400">Total Entropy</span>
@@ -163,7 +168,8 @@ const handleLogout = async () => {
       </div>
 
     </div>
-    
+
     <BossGate />
+    <ThemePicker v-if="showThemePicker" @close="showThemePicker = false" />
   </div>
 </template>

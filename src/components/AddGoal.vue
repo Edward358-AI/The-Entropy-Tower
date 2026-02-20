@@ -40,7 +40,6 @@ const handleAIBuild = async () => {
         title: mq.title,
         xpReward: mq.xp,
         deadline: Timestamp.fromDate(addDays(new Date(), mq.deadlineOffset || 1)),
-        isBoss: false
       })
     }
     aiInput.value = ''
@@ -62,7 +61,6 @@ const handleManualAdd = async () => {
       title: manualTitle.value,
       xpReward: parseInt(manualXP.value) || 20,
       deadline: Timestamp.fromDate(selectedDate),
-      isBoss: false
     })
 
     // Reset form

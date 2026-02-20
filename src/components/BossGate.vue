@@ -1,18 +1,16 @@
 <script setup>
-import { usePlayerStore } from '../stores/playerStore'
-import { useQuestStore } from '../stores/questStore'
 import { computed } from 'vue'
-import { Ghost, Sword } from 'lucide-vue-next'
+import { usePlayerStore } from '../stores/playerStore'
+import { Ghost, Swords } from 'lucide-vue-next'
 
 const playerStore = usePlayerStore()
-const questStore = useQuestStore()
 
-const bossQuest = computed(() => {
-  return questStore.quests.find(q => q.isBoss && q.status !== 'completed')
+const bossHPPercent = computed(() => {
+  const remaining = playerStore.bossXPRequired - playerStore.bossXPEarned
+  return Math.max((remaining / playerStore.bossXPRequired) * 100, 0)
 })
 
-// If no boss quest exists but we are capped, we might need to generate one
-// For now, this component just shows the gate
+const damageDealt = computed(() => Math.min(playerStore.bossXPEarned, playerStore.bossXPRequired))
 </script>
 
 <template>
@@ -27,26 +25,87 @@ const bossQuest = computed(() => {
         <Ghost class="w-16 h-16 text-red-500 mx-auto mb-4 animate-float" />
 
         <h2 class="text-3xl font-display font-bold text-white mb-2">GATEKEEPER DETECTED</h2>
-        <p class="text-red-300 mb-6">
-          Your Entropy capacity has reached its limit. You cannot ascend to Level {{ playerStore.level + 1 }}
-          until you defeat the Gatekeeper.
+        <p class="text-red-300 mb-2">
+          A Gatekeeper blocks your path to Level {{ playerStore.level + 1 }}.
+        </p>
+        <p class="text-gray-400 text-sm mb-6">
+          Complete quests to deal damage. Earn <span class="text-red-300 font-bold">{{ playerStore.bossXPRequired }}
+            XP</span> to slay it.
         </p>
 
-        <div v-if="bossQuest" class="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-6">
-          <h3 class="font-bold text-white text-lg">{{ bossQuest.title }}</h3>
-          <p class="text-red-400 text-sm mt-1">Reward: ASCENSION + {{ bossQuest.xpReward }} XP</p>
-        </div>
-        <div v-else class="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-6">
-          <p class="text-red-400 text-sm">No Boss Quest Found. Create a boss quest using AI Assist to proceed.</p>
+        <!-- Boss HP Bar -->
+        <div class="bg-black/40 border border-red-500/20 rounded-xl p-4 mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Swords class="w-3.5 h-3.5 text-red-400" />
+              Boss #{{ playerStore.bossNumber }}
+            </span>
+            <span class="text-xs font-mono text-red-300">
+              {{ damageDealt }} / {{ playerStore.bossXPRequired }} DMG
+            </span>
+          </div>
+
+          <!-- HP Bar -->
+          <div class="h-5 bg-gray-900 rounded-full overflow-hidden border border-white/5">
+            <div class="h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden"
+              :class="bossHPPercent < 25 ? 'boss-hp-critical' : 'boss-hp-bar'" :style="{ width: `${bossHPPercent}%` }">
+              <div class="absolute inset-0 boss-hp-shimmer"></div>
+            </div>
+          </div>
+
+          <div class="flex justify-between mt-1.5">
+            <span class="text-[10px] text-gray-500">DEFEATED</span>
+            <span class="text-[10px] text-gray-500">FULL HP</span>
+          </div>
         </div>
 
-        <button v-if="bossQuest"
-          @click="async () => { await questStore.completeQuest(bossQuest.id); await playerStore.unlockBossGate(); }"
-          class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg flex items-center gap-2 mx-auto transition-all hover:scale-105 shadow-[0_0_20px_rgba(220,38,38,0.4)]">
-          <Sword class="w-5 h-5" />
-          SLAY GATEKEEPER
-        </button>
+        <p class="text-gray-500 text-xs">
+          Keep completing quests — each one deals damage to the Gatekeeper.
+        </p>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.boss-hp-bar {
+  background: linear-gradient(90deg, #dc2626, #ef4444, #dc2626);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.boss-hp-critical {
+  background: linear-gradient(90deg, #991b1b, #dc2626, #991b1b);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+  animation: critical-pulse 1s ease-in-out infinite;
+}
+
+.boss-hp-shimmer {
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+
+  0%,
+  100% {
+    background-position: 200% 0;
+  }
+
+  50% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes critical-pulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+</style>
