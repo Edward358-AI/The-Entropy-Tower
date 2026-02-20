@@ -19,7 +19,7 @@ const features = [
   {
     icon: TrendingUp,
     title: 'XP & Leveling',
-    description: 'Earn XP by completing quests. Level up through material ages — Stone, Iron, Gold, Diamond, and Astral.',
+    description: 'Earn XP by completing quests. Level up through 11 material ages — from Stone all the way to Omega at Level 100.',
     color: 'text-path-erudition'
   },
   {
@@ -37,7 +37,7 @@ const features = [
   {
     icon: Shield,
     title: 'Boss Gates',
-    description: 'Every 10 levels, a Gatekeeper blocks your path. Complete a boss quest to ascend and continue your journey.',
+    description: 'Every 10 levels, a Gatekeeper blocks your path. XP you earn deals damage until the boss falls and the gate opens.',
     color: 'text-path-preservation'
   },
   {
@@ -55,7 +55,9 @@ const features = [
     <div class="relative overflow-hidden">
       <!-- Background glow -->
       <div class="absolute inset-0 pointer-events-none">
-        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-astral-glow/10 rounded-full blur-[120px]"></div>
+        <div
+          class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-astral-glow/10 rounded-full blur-[120px]">
+        </div>
       </div>
 
       <div class="relative z-10 max-w-5xl mx-auto px-6 pt-16 pb-20 md:pt-24 md:pb-28">
@@ -70,7 +72,8 @@ const features = [
               A gamified productivity system where your tasks fuel a rising tower — and neglect causes it to decay.
             </p>
             <p class="text-sm text-gray-500 mb-8 max-w-md">
-              Build habits, fight entropy, and ascend through material ages. Every quest completed raises your tower. Every missed deadline crumbles it.
+              Build habits, fight entropy, and ascend through material ages. Every quest completed raises your tower.
+              Every missed deadline crumbles it.
             </p>
 
             <!-- CTA Buttons -->
@@ -98,7 +101,8 @@ const features = [
           <div class="flex-shrink-0">
             <div class="relative w-28 h-[320px] md:w-32 md:h-[400px]">
               <!-- Tower Container -->
-              <div class="absolute inset-0 bg-astral-nebula/50 border border-white/10 rounded-t-lg overflow-hidden backdrop-blur-sm">
+              <div
+                class="absolute inset-0 bg-astral-nebula/50 border border-white/10 rounded-t-lg overflow-hidden backdrop-blur-sm">
                 <!-- Level Label -->
                 <div class="absolute top-4 left-0 right-0 text-center z-10">
                   <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Level</div>
@@ -111,7 +115,8 @@ const features = [
                 </div>
               </div>
               <!-- Glow under tower -->
-              <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-8 bg-astral-glow/30 rounded-full blur-xl"></div>
+              <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-8 bg-astral-glow/30 rounded-full blur-xl">
+              </div>
             </div>
           </div>
         </div>

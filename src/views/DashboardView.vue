@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { usePlayerStore } from '../stores/playerStore'
+import { useQuestStore } from '../stores/questStore'
 import { useRouter } from 'vue-router'
 import TheTower from '../components/TheTower.vue'
 import QuestFeed from '../components/QuestFeed.vue'
@@ -9,15 +10,26 @@ import AddGoal from '../components/AddGoal.vue'
 import Heatmap from '../components/Heatmap.vue'
 import BossGate from '../components/BossGate.vue'
 import ThemePicker from '../components/ThemePicker.vue'
-import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette } from 'lucide-vue-next'
+import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette, RefreshCw } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const playerStore = usePlayerStore()
+const questStore = useQuestStore()
 const router = useRouter()
 
 // Mobile tab state
 const activeTab = ref('quests') // 'add' | 'quests' | 'history'
 const showThemePicker = ref(false)
+const isRefreshing = ref(false)
+
+const handleRefresh = async () => {
+  isRefreshing.value = true
+  try {
+    await Promise.all([playerStore.initStats(), questStore.loadQuests()])
+  } finally {
+    setTimeout(() => { isRefreshing.value = false }, 600)
+  }
+}
 
 onMounted(() => {
   playerStore.initStats()
@@ -43,6 +55,10 @@ const handleLogout = async () => {
       </div>
 
       <div class="flex items-center gap-1">
+        <button @click="handleRefresh"
+          class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Refresh">
+          <RefreshCw class="w-5 h-5 transition-transform duration-500" :class="isRefreshing ? 'animate-spin' : ''" />
+        </button>
         <button @click="showThemePicker = true"
           class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Themes">
           <Palette class="w-5 h-5" />

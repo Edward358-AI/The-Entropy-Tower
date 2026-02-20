@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Swords, TrendingUp, Flame, CalendarDays, Shield, Zap, Clock, Brain, Star } from 'lucide-vue-next'
+import { ArrowLeft, Swords, TrendingUp, Flame, CalendarDays, Shield, Zap, Clock, Brain, Star, Palette } from 'lucide-vue-next'
 
 const router = useRouter()
 </script>
@@ -126,8 +126,9 @@ const router = useRouter()
               <div class="text-[10px] text-gray-500">Lv 100</div>
             </div>
           </div>
-          <p class="mt-2">Starting at <span class="text-purple-300 font-bold">Void (Lv 50)</span>, your tier unlocks
-            ambient visual effects across the entire dashboard page.</p>
+          <p class="mt-2">Each tier has its own <span class="text-astral-glow font-bold">ambient page background</span>.
+            You can mix and match tower designs and page backgrounds using the <span class="text-white font-bold">Theme
+              Selector</span> (palette icon in the header).</p>
           <p>If decay pushes your XP below zero, you <span class="text-red-400 font-bold">de-level</span>. Your tower
             literally crumbles.</p>
         </div>
@@ -258,6 +259,32 @@ const router = useRouter()
               <div class="text-xs text-gray-500">600 HP (Lv 39)</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- Section: Theme Selector -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-path-erudition/10">
+            <Palette class="w-5 h-5 text-path-erudition" />
+          </div>
+          <h2 class="text-xl font-bold text-white">Theme Selector</h2>
+        </div>
+        <div
+          class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-3 text-sm text-gray-400 leading-relaxed">
+          <p>Tap the <span class="text-white font-bold">palette icon</span> in the dashboard header to open the Theme
+            Selector.</p>
+          <p>You can customize two things independently:</p>
+          <ul class="list-disc list-inside space-y-1 ml-2">
+            <li><span class="text-white font-bold">Tower Design</span> — change your tower's visual style to any tier
+              you've reached</li>
+            <li><span class="text-white font-bold">Page Background</span> — apply ambient effects from any unlocked tier
+              across the whole page</li>
+          </ul>
+          <p>Tiers you haven't reached yet appear <span class="text-gray-500 font-bold">dimmed with a lock icon</span>.
+            Once unlocked, a tier stays available forever — even if you de-level.</p>
+          <p>Your selections are <span class="text-astral-glow font-bold">saved automatically</span> and persist across
+            sessions. Select your current tier to reset back to auto mode.</p>
         </div>
       </section>
 
