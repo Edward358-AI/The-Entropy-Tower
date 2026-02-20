@@ -17,9 +17,11 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-astral-void text-astral-star font-sans antialiased">
-    <!-- Starfield Background (Global) -->
-    <div class="fixed inset-0 z-0 pointer-events-none">
-      <div class="absolute inset-0 bg-[url('/stars.png')] opacity-50 animate-pulse-slow"></div>
+    <!-- Starfield Background (CSS) -->
+    <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <div class="stars-sm"></div>
+      <div class="stars-md"></div>
+      <div class="stars-lg"></div>
     </div>
 
     <!-- Sync Indicator -->
@@ -52,5 +54,74 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* ---- CSS Starfield ---- */
+.stars-sm,
+.stars-md,
+.stars-lg {
+  position: absolute;
+  inset: 0;
+  will-change: opacity;
+}
+
+/* Small stars — many, subtle, fast twinkle */
+.stars-sm {
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 25% 35%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 40% 8%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 55% 50%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 70% 22%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 85% 60%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 15% 72%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 50% 85%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 92% 40%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 35% 95%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 78% 78%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 5% 55%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 62% 30%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 88% 92%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 45% 62%, rgba(255, 255, 255, 0.4), transparent);
+  animation: twinkle-stars 4s ease-in-out infinite alternate;
+}
+
+/* Medium stars — fewer, brighter, slow twinkle */
+.stars-md {
+  background-image:
+    radial-gradient(1.5px 1.5px at 18% 20%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 48% 45%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 72% 12%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 33% 68%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 82% 55%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 8% 88%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 58% 78%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 95% 30%, rgba(255, 255, 255, 0.7), transparent);
+  animation: twinkle-stars 6s ease-in-out infinite alternate-reverse;
+}
+
+/* Large stars — rare, bright, slow drift */
+.stars-lg {
+  background-image:
+    radial-gradient(2px 2px at 22% 25%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(2px 2px at 65% 18%, rgba(200, 220, 255, 0.8), transparent),
+    radial-gradient(2.5px 2.5px at 80% 70%, rgba(255, 240, 220, 0.7), transparent),
+    radial-gradient(2px 2px at 42% 82%, rgba(200, 200, 255, 0.8), transparent),
+    radial-gradient(2px 2px at 12% 60%, rgba(255, 255, 255, 0.7), transparent);
+  animation: twinkle-stars 8s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle-stars {
+  0% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
 }
 </style>

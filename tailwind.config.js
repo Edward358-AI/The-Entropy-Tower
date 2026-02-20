@@ -11,7 +11,7 @@ export default {
       },
       colors: {
         astral: {
-          void: '#0a0a1a',    // Deep background
+          void: '#050510',    // Deep background
           nebula: '#1a1a2e',  // Card background
           cosmic: '#16213e',  // Panel background
           glow: '#e94560',    // Accent/active
