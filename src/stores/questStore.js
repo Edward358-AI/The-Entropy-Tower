@@ -39,6 +39,9 @@ export const useQuestStore = defineStore('quest', () => {
           return aTime - bTime
         })
 
+      // Mark overdue status based on exact deadline time (visual, every load)
+      refreshOverdueStatus()
+
       // Check for decay on load
       await checkDecay()
 
@@ -208,14 +211,39 @@ export const useQuestStore = defineStore('quest', () => {
     }
   }
 
+  // Mark quests overdue based on exact deadline time (runs every load, visual only)
+  const refreshOverdueStatus = () => {
+    const now = new Date()
+    for (const quest of quests.value) {
+      if (!quest.deadline) continue
+      const deadline = new Date(quest.deadline.seconds * 1000)
+      if (now > deadline) {
+        quest.daysOverdue = Math.max(1, differenceInCalendarDays(now, deadline))
+        if (quest.daysOverdue >= 5) quest.status = 'corrupted'
+      } else {
+        quest.daysOverdue = 0
+      }
+    }
+  }
+
   const checkDecay = async () => {
     const today = playerStore.getTodayStr()
-
-    // Fix #3: Only run decay once per day
-    if (playerStore.lastDecayDate === today) return
-    playerStore.lastDecayDate = today
-
     const now = new Date()
+
+    // Detect quests that JUST became overdue (past exact time, not yet penalized)
+    const newlyOverdue = quests.value.filter(q => {
+      if (!q.deadline) return false
+      const deadline = new Date(q.deadline.seconds * 1000)
+      return now > deadline && (!q.daysOverdue || q.daysOverdue === 0)
+    })
+
+    const isNewDay = playerStore.lastDecayDate !== today
+
+    // Skip if nothing to do: not a new day AND no newly overdue quests
+    if (!isNewDay && newlyOverdue.length === 0) return
+
+    if (isNewDay) playerStore.lastDecayDate = today
+
     let totalPenalty = 0
     const missedDates = {}
 
@@ -223,21 +251,24 @@ export const useQuestStore = defineStore('quest', () => {
       if (!quest.deadline) continue
 
       const deadline = new Date(quest.deadline.seconds * 1000)
-      const daysUpdate = differenceInCalendarDays(now, deadline)
+      if (!(now > deadline)) continue // Not overdue yet
 
-      if (daysUpdate > 0) {
-        // Apply Rot: 50 * (2 ^ (d - 1))
+      const daysUpdate = Math.max(1, differenceInCalendarDays(now, deadline))
+      const wasAlreadyOverdue = quest.daysOverdue > 0
+      quest.daysOverdue = daysUpdate
+
+      // Apply penalty if: new day (daily escalation) OR first-hit (just became overdue)
+      if (isNewDay || !wasAlreadyOverdue) {
         const penalty = 50 * Math.pow(2, daysUpdate - 1)
         totalPenalty += penalty
-        quest.daysOverdue = daysUpdate
 
         // Track the deadline date as a missed date for heatmap
         const dlStr = `${deadline.getFullYear()}-${String(deadline.getMonth() + 1).padStart(2, '0')}-${String(deadline.getDate()).padStart(2, '0')}`
         missedDates[`missed_${dlStr}`] = increment(1)
+      }
 
-        if (daysUpdate >= 5) {
-          quest.status = 'corrupted'
-        }
+      if (daysUpdate >= 5) {
+        quest.status = 'corrupted'
       }
     }
 
