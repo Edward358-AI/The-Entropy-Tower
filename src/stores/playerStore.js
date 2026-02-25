@@ -271,6 +271,7 @@ export const usePlayerStore = defineStore('player', () => {
     activePageTheme,
     unlockedTiers,
     TIER_LIST,
+    statsReady,
     getTodayStr,
     initStats,
     addXP,

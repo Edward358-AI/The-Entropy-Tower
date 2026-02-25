@@ -227,6 +227,8 @@ export const useQuestStore = defineStore('quest', () => {
   }
 
   const checkDecay = async () => {
+    // Wait for player stats to load so lastDecayDate is accurate
+    await playerStore.statsReady
     const today = playerStore.getTodayStr()
     const now = new Date()
 
@@ -259,7 +261,7 @@ export const useQuestStore = defineStore('quest', () => {
 
       // Apply penalty if: new day (daily escalation) OR first-hit (just became overdue)
       if (isNewDay || !wasAlreadyOverdue) {
-        const penalty = 50 * Math.pow(2, daysUpdate - 1)
+        const penalty = Math.round(playerStore.xpToNextLevel * 0.25 * Math.pow(2, daysUpdate - 1))
         totalPenalty += penalty
 
         // Track the deadline date as a missed date for heatmap

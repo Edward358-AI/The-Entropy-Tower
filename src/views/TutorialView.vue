@@ -149,21 +149,22 @@ const router = useRouter()
           <div>
             <p class="font-bold text-white mb-2">Penalty escalation (per overdue quest):</p>
             <div class="bg-black/20 rounded-lg p-4 font-mono text-xs text-gray-300">
-              Penalty = 50 × 2^(days - 1)
+              Penalty = 25% of XP-to-Next-Level × 2^(days - 1)
             </div>
+            <p class="text-xs text-gray-500 mt-1">Scales with your level — higher levels lose proportionally more XP.</p>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
               <div class="text-red-400 font-bold">Day 1</div>
-              <div class="text-xs text-gray-500">−50 XP</div>
+              <div class="text-xs text-gray-500">−25% level XP</div>
             </div>
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
               <div class="text-red-400 font-bold">Day 2</div>
-              <div class="text-xs text-gray-500">−100 XP</div>
+              <div class="text-xs text-gray-500">−50% level XP</div>
             </div>
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
               <div class="text-red-400 font-bold">Day 3</div>
-              <div class="text-xs text-gray-500">−200 XP</div>
+              <div class="text-xs text-gray-500">−100% level XP</div>
             </div>
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
               <div class="text-red-400 font-bold">Day 5+</div>
