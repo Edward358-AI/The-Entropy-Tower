@@ -39,11 +39,11 @@ export const useQuestStore = defineStore('quest', () => {
           return aTime - bTime
         })
 
+      // Check for decay on load (BEFORE refreshOverdueStatus so raw daysOverdue from Firestore is intact)
+      await checkDecay()
+
       // Mark overdue status based on exact deadline time (visual, every load)
       refreshOverdueStatus()
-
-      // Check for decay on load
-      await checkDecay()
 
       // Compute streak from history
       await computeStreak()
@@ -294,6 +294,20 @@ export const useQuestStore = defineStore('quest', () => {
     } else {
       // Still save the lastDecayDate even if no penalty
       await playerStore.saveStats()
+    }
+
+    // Persist daysOverdue for each overdue quest so next load doesn't re-trigger first-hit
+    if (auth.currentUser) {
+      for (const quest of quests.value) {
+        if (quest.daysOverdue > 0 && quest.id && !quest.id.startsWith('temp-')) {
+          try {
+            const questRef = doc(db, 'users', auth.currentUser.uid, 'quests', quest.id)
+            await withTimeout(updateDoc(questRef, { daysOverdue: quest.daysOverdue }))
+          } catch (err) {
+            console.error('Failed to persist daysOverdue:', err)
+          }
+        }
+      }
     }
   }
 
