@@ -195,20 +195,29 @@ const router = useRouter()
             quest and <span class="text-white font-bold">no missed deadlines</span>.</p>
           <p>The streak is computed from your heatmap history — counting back from today. If today has no activity yet,
             it counts from yesterday.</p>
-          <div class="grid grid-cols-3 gap-2 mt-2">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
             <div class="bg-white/5 border border-white/10 rounded-lg p-3 text-center">
               <div class="text-white font-bold">0–2 days</div>
-              <div class="text-xs text-gray-500">×1.0 multiplier</div>
+              <div class="text-xs text-gray-500">×1.0</div>
             </div>
             <div class="bg-path-abundance/10 border border-path-abundance/20 rounded-lg p-3 text-center">
-              <div class="text-path-abundance font-bold">3–6 days</div>
-              <div class="text-xs text-gray-500">×1.2 multiplier</div>
+              <div class="text-path-abundance font-bold">3–4 days</div>
+              <div class="text-xs text-gray-500">×1.3</div>
+            </div>
+            <div class="bg-path-harmony/10 border border-path-harmony/20 rounded-lg p-3 text-center">
+              <div class="text-path-harmony font-bold">5–6 days</div>
+              <div class="text-xs text-gray-500">×1.6</div>
             </div>
             <div class="bg-path-erudition/10 border border-path-erudition/20 rounded-lg p-3 text-center">
-              <div class="text-path-erudition font-bold">7+ days</div>
-              <div class="text-xs text-gray-500">×1.5 multiplier</div>
+              <div class="text-path-erudition font-bold">7–13 days</div>
+              <div class="text-xs text-gray-500">×2.0</div>
             </div>
           </div>
+          <div class="mt-2 bg-path-erudition/10 border border-path-erudition/20 rounded-lg p-3 text-center">
+            <div class="text-path-erudition font-bold">14+ days</div>
+            <div class="text-xs text-gray-500">×2.5</div>
+          </div>
+          <p class="mt-2">Each day a quest remains overdue counts as a <span class="text-red-400 font-bold">separate miss</span> on that day. This means lingering overdue quests will <span class="text-red-400 font-bold">break your streak every single day</span> they stay unresolved.</p>
           <p>Any overdue quest <span class="text-red-400 font-bold">immediately resets</span> your streak to zero.</p>
         </div>
       </section>

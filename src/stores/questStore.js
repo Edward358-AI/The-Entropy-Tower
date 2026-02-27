@@ -114,8 +114,10 @@ export const useQuestStore = defineStore('quest', () => {
         let reward = quest.xpReward
 
         // Momentum Multiplier
-        if (playerStore.streak >= 7) reward *= 1.5
-        else if (playerStore.streak >= 3) reward *= 1.2
+        if (playerStore.streak >= 14) reward *= 2.5
+        else if (playerStore.streak >= 7) reward *= 2.0
+        else if (playerStore.streak >= 5) reward *= 1.6
+        else if (playerStore.streak >= 3) reward *= 1.3
 
         // Early Bird Bonus
         if (quest.deadline) {
@@ -264,9 +266,9 @@ export const useQuestStore = defineStore('quest', () => {
         const penalty = Math.round(playerStore.xpToNextLevel * 0.25 * Math.pow(2, daysUpdate - 1))
         totalPenalty += penalty
 
-        // Track the deadline date as a missed date for heatmap
-        const dlStr = `${deadline.getFullYear()}-${String(deadline.getMonth() + 1).padStart(2, '0')}-${String(deadline.getDate()).padStart(2, '0')}`
-        missedDates[`missed_${dlStr}`] = increment(1)
+        // Track TODAY as a missed date for heatmap (each overdue day counts as a miss)
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+        missedDates[`missed_${todayStr}`] = increment(1)
       }
 
       if (daysUpdate >= 5) {

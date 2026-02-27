@@ -49,8 +49,9 @@ const handleLogout = async () => {
         <h1 class="text-xl desk:text-2xl font-bold font-display text-white">Entropy Tower</h1>
         <div class="flex items-center gap-2 text-sm text-gray-400">
           <span>Streak: <span class="text-astral-glow font-bold">{{ playerStore.streak }} days</span></span>
-          <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 7 ? '1.5' :
-            playerStore.streak >= 3 ? '1.2' : '1.0' }}</span>
+          <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 14 ? '2.5' :
+            playerStore.streak >= 7 ? '2.0' : playerStore.streak >= 5 ? '1.6' :
+            playerStore.streak >= 3 ? '1.3' : '1.0' }}</span>
         </div>
       </div>
 
