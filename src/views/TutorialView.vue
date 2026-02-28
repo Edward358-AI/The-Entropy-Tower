@@ -147,34 +147,40 @@ const router = useRouter()
           <p>When a quest goes past its deadline time, <span class="text-red-400 font-bold">entropy</span> kicks in. XP
             is deducted and your streak is reset to zero.</p>
           <div>
-            <p class="font-bold text-white mb-2">Penalty escalation (per overdue quest):</p>
-            <div class="bg-black/20 rounded-lg p-4 font-mono text-xs text-gray-300">
-              Penalty = 25% of XP-to-Next-Level × 2^(days - 1)
-            </div>
-            <p class="text-xs text-gray-500 mt-1">Scales with your level — higher levels lose proportionally more XP.</p>
+            <p class="font-bold text-white mb-2">Penalty scales by level — initial hit + daily escalation from day 2:
+            </p>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
-              <div class="text-red-400 font-bold">Day 1</div>
-              <div class="text-xs text-gray-500">−25% level XP</div>
+              <div class="text-red-400 font-bold text-xs">Lv 1–19</div>
+              <div class="text-[10px] text-gray-500">10% + 5%/day</div>
             </div>
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
-              <div class="text-red-400 font-bold">Day 2</div>
-              <div class="text-xs text-gray-500">−50% level XP</div>
+              <div class="text-red-400 font-bold text-xs">Lv 20–39</div>
+              <div class="text-[10px] text-gray-500">15% + 5%/day</div>
             </div>
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
-              <div class="text-red-400 font-bold">Day 3</div>
-              <div class="text-xs text-gray-500">−100% level XP</div>
+              <div class="text-red-400 font-bold text-xs">Lv 40–59</div>
+              <div class="text-[10px] text-gray-500">20% + 10%/day</div>
             </div>
             <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
-              <div class="text-red-400 font-bold">Day 5+</div>
-              <div class="text-xs text-gray-500">CORRUPTED</div>
+              <div class="text-red-400 font-bold text-xs">Lv 60–79</div>
+              <div class="text-[10px] text-gray-500">25% + 10%/day</div>
+            </div>
+            <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
+              <div class="text-red-400 font-bold text-xs">Lv 80–99</div>
+              <div class="text-[10px] text-gray-500">25% + 15%/day</div>
+            </div>
+            <div class="bg-red-900/20 border border-red-500/20 rounded-lg p-3 text-center">
+              <div class="text-red-400 font-bold text-xs">Lv 100+</div>
+              <div class="text-[10px] text-gray-500">30% + 20%/day</div>
             </div>
           </div>
+          <p class="text-xs text-gray-500 mt-2">Example at Lv 1–19: Day 1 = 10%, Day 2 = 15%, Day 3 = 20%, Day 4 = 25%.
+            Cumulative by day 3 = 45%.</p>
           <p class="mt-2">
             <span class="text-white font-bold">First-hit penalty:</span> The first decay penalty applies at the
-            <span class="text-astral-glow">exact deadline time</span> you set. After that, further escalation follows
-            the standard daily schedule.
+            <span class="text-astral-glow">exact deadline time</span> you set. Escalation begins from day 2 onward.
           </p>
           <p>After 5 days overdue, the quest becomes <span class="text-red-400 font-bold">corrupted</span> — shown with
             a red border and maximum urgency.</p>
@@ -217,7 +223,9 @@ const router = useRouter()
             <div class="text-path-erudition font-bold">14+ days</div>
             <div class="text-xs text-gray-500">×2.5</div>
           </div>
-          <p class="mt-2">Each day a quest remains overdue counts as a <span class="text-red-400 font-bold">separate miss</span> on that day. This means lingering overdue quests will <span class="text-red-400 font-bold">break your streak every single day</span> they stay unresolved.</p>
+          <p class="mt-2">Each day a quest remains overdue counts as a <span class="text-red-400 font-bold">separate
+              miss</span> on that day. This means lingering overdue quests will <span
+              class="text-red-400 font-bold">break your streak every single day</span> they stay unresolved.</p>
           <p>Any overdue quest <span class="text-red-400 font-bold">immediately resets</span> your streak to zero.</p>
         </div>
       </section>

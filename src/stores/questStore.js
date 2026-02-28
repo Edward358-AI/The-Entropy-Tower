@@ -243,6 +243,20 @@ export const useQuestStore = defineStore('quest', () => {
 
     const isNewDay = playerStore.lastDecayDate !== today
 
+    // DEBUG — remove after testing
+    console.log('[checkDecay]', {
+      isNewDay,
+      lastDecayDate: playerStore.lastDecayDate,
+      today,
+      newlyOverdueCount: newlyOverdue.length,
+      questsWithOverdue: quests.value.map(q => ({
+        title: q.title,
+        daysOverdue: q.daysOverdue,
+        deadline: q.deadline ? new Date(q.deadline.seconds * 1000).toLocaleString() : 'none',
+        isPastDeadline: q.deadline ? now > new Date(q.deadline.seconds * 1000) : false
+      }))
+    })
+
     // Skip if nothing to do: not a new day AND no newly overdue quests
     if (!isNewDay && newlyOverdue.length === 0) return
 
@@ -261,9 +275,24 @@ export const useQuestStore = defineStore('quest', () => {
       const wasAlreadyOverdue = quest.daysOverdue > 0
       quest.daysOverdue = daysUpdate
 
+      // DEBUG — remove after testing
+      console.log('[checkDecay] quest:', quest.title, { daysUpdate, wasAlreadyOverdue, willPenalize: isNewDay || !wasAlreadyOverdue })
+
       // Apply penalty if: new day (daily escalation) OR first-hit (just became overdue)
       if (isNewDay || !wasAlreadyOverdue) {
-        const penalty = Math.round(playerStore.xpToNextLevel * 0.25 * Math.pow(2, daysUpdate - 1))
+        // Decay: initial rate (day 1-2) + escalation per day from day 3+
+        let initialRate, escalation
+        if (playerStore.level < 20) { initialRate = 0.10; escalation = 0.05 }
+        else if (playerStore.level < 40) { initialRate = 0.15; escalation = 0.05 }
+        else if (playerStore.level < 60) { initialRate = 0.20; escalation = 0.10 }
+        else if (playerStore.level < 80) { initialRate = 0.25; escalation = 0.10 }
+        else if (playerStore.level < 100) { initialRate = 0.25; escalation = 0.15 }
+        else { initialRate = 0.30; escalation = 0.20 }
+
+        const dayRate = daysUpdate <= 1
+          ? initialRate
+          : initialRate + escalation * (daysUpdate - 1)
+        const penalty = Math.round(playerStore.xpToNextLevel * dayRate)
         totalPenalty += penalty
 
         // Track TODAY as a missed date for heatmap (each overdue day counts as a miss)
