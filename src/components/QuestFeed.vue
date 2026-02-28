@@ -109,9 +109,11 @@ const saveEdit = async () => {
           </div>
 
           <div class="flex items-center gap-1">
-            <button @click.stop="startEdit(quest)"
-              class="p-2 rounded-full hover:bg-blue-500/20 text-gray-600 hover:text-blue-400 transition-colors opacity-40 hover:opacity-100"
-              title="Edit Quest">
+            <button @click.stop="startEdit(quest)" :disabled="quest.daysOverdue > 0"
+              class="p-2 rounded-full transition-colors" :class="quest.daysOverdue > 0
+                ? 'text-gray-700 cursor-not-allowed opacity-20'
+                : 'hover:bg-blue-500/20 text-gray-600 hover:text-blue-400 opacity-40 hover:opacity-100'"
+              :title="quest.daysOverdue > 0 ? 'Cannot edit while decaying' : 'Edit Quest'">
               <Pencil class="w-4 h-4" />
             </button>
 

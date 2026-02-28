@@ -182,6 +182,10 @@ const router = useRouter()
             <span class="text-white font-bold">First-hit penalty:</span> The first decay penalty applies at the
             <span class="text-astral-glow">exact deadline time</span> you set. Escalation begins from day 2 onward.
           </p>
+          <p><span class="text-white font-bold">No escape:</span> Editing is <span
+              class="text-red-400 font-bold">disabled</span> while a quest is decaying. Deleting an overdue quest still
+            triggers the current day's <span class="text-red-400 font-bold">decay penalty</span> and resets your streak.
+          </p>
           <p>After 5 days overdue, the quest becomes <span class="text-red-400 font-bold">corrupted</span> — shown with
             a red border and maximum urgency.</p>
         </div>
