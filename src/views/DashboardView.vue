@@ -146,7 +146,7 @@ const handleLogout = async () => {
     <div class="hidden desk:grid grid-cols-12 gap-6">
 
       <!-- Left Panel: Quest Feed -->
-      <div class="col-span-4 flex flex-col gap-6">
+      <div class="col-span-4 flex flex-col gap-6 min-w-0">
         <AddGoal />
         <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>

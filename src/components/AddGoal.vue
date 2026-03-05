@@ -77,7 +77,7 @@ const handleManualAdd = async () => {
 </script>
 
 <template>
-  <div class="bg-astral-nebula/40 border border-white/5 rounded-xl p-4 transition-all duration-300">
+  <div class="bg-astral-nebula/40 border border-white/5 rounded-xl p-4 transition-all duration-300 overflow-hidden">
     <!-- Tabs -->
     <div class="flex gap-4 mb-4 border-b border-white/5 pb-2">
       <button @click="mode = 'ai'" class="flex items-center gap-2 text-sm font-bold pb-2 transition-colors relative"
@@ -134,11 +134,11 @@ const handleManualAdd = async () => {
         </button>
 
         <!-- Date & Time Row -->
-        <div class="flex gap-2">
+        <div class="flex gap-2 min-w-0">
           <input v-model="manualDate" type="date"
-            class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-astral-glow flex-1 min-w-0" />
+            class="bg-black/20 border border-white/10 rounded-lg px-2 py-2 text-white text-sm focus:outline-none focus:border-astral-glow flex-1 min-w-0" />
           <input v-model="manualTime" type="time"
-            class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-astral-glow w-[100px]" />
+            class="bg-black/20 border border-white/10 rounded-lg px-2 py-2 text-white text-sm focus:outline-none focus:border-astral-glow w-[90px] min-w-0" />
         </div>
       </div>
     </div>
