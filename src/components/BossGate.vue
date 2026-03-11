@@ -14,18 +14,17 @@ const damageDealt = computed(() => Math.min(playerStore.bossXPEarned, playerStor
 </script>
 
 <template>
+  <!-- Floating Widget instead of Blocking Modal -->
   <div v-if="playerStore.isLevelCapped"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-    <div
-      class="bg-astral-nebula border border-red-500/30 rounded-2xl p-8 max-w-lg w-full text-center relative overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.2)]">
+    class="fixed z-40 bottom-24 left-1/2 -translate-x-1/2 desk:bottom-8 desk:left-auto desk:right-8 desk:translate-x-0 w-[90%] max-w-[340px] bg-astral-nebula border border-red-500/30 rounded-2xl p-6 text-center shadow-[0_0_40px_rgba(239,68,68,0.2)] overflow-hidden">
       <!-- Background Pulse -->
       <div class="absolute inset-0 bg-red-500/5 animate-pulse-slow pointer-events-none"></div>
 
       <div class="relative z-10">
-        <Ghost class="w-16 h-16 text-red-500 mx-auto mb-4 animate-float" />
+        <Ghost class="w-10 h-10 text-red-500 mx-auto mb-3 animate-float" />
 
-        <h2 class="text-3xl font-display font-bold text-white mb-2">GATEKEEPER DETECTED</h2>
-        <p class="text-red-300 mb-2">
+        <h2 class="text-xl font-display font-bold text-white mb-1">GATEKEEPER DETECTED</h2>
+        <p class="text-red-300 text-sm mb-2">
           A Gatekeeper blocks your path to Level {{ playerStore.level + 1 }}.
         </p>
         <p class="text-gray-400 text-sm mb-6">
@@ -34,7 +33,7 @@ const damageDealt = computed(() => Math.min(playerStore.bossXPEarned, playerStor
         </p>
 
         <!-- Boss HP Bar -->
-        <div class="bg-black/40 border border-red-500/20 rounded-xl p-4 mb-6">
+        <div class="bg-black/40 border border-red-500/20 rounded-xl p-3 mb-4">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
               <Swords class="w-3.5 h-3.5 text-red-400" />
@@ -64,7 +63,6 @@ const damageDealt = computed(() => Math.min(playerStore.bossXPEarned, playerStor
         </p>
       </div>
     </div>
-  </div>
 </template>
 
 <style scoped>

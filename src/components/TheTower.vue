@@ -65,6 +65,15 @@ const tierIndex = computed(() => {
   const tiers = ['Stone', 'Iron', 'Gold', 'Diamond', 'Astral', 'Void', 'Celestial', 'Ethereal', 'Mythic', 'Transcendent', 'Omega']
   return tiers.indexOf(material.value)
 })
+
+// XP bar cosmetic overlay class
+const xpBarOverlay = computed(() => {
+  const sel = playerStore.selectedCosmetics?.xpBar
+  if (sel === 'xpGradient') return 'xp-gradient-pulse'
+  if (sel === 'xpLightning') return 'xp-lightning'
+  if (sel === 'xpPrismatic') return 'xp-prismatic'
+  return null
+})
 </script>
 
 <template>
@@ -85,6 +94,7 @@ const tierIndex = computed(() => {
             :class="`bar-${material.toLowerCase()}`" :style="{ width: `${progressPercent}%` }">
             <div v-if="tierIndex >= 1" class="absolute inset-0 shimmer-overlay"></div>
             <div class="absolute inset-0 bg-gradient-to-r from-black/30 to-white/20"></div>
+            <div v-if="xpBarOverlay" class="absolute inset-0" :class="xpBarOverlay"></div>
           </div>
         </div>
         <div class="flex justify-between mt-1">
@@ -211,6 +221,9 @@ const tierIndex = computed(() => {
           <div class="absolute inset-0 omega-singularity"></div>
           <div class="absolute inset-0 omega-corona"></div>
         </template>
+
+        <!-- XP Bar Cosmetic Overlay -->
+        <div v-if="xpBarOverlay" class="absolute inset-0 z-20" :class="xpBarOverlay"></div>
       </div>
 
       <!-- Entropy Cracks -->
@@ -796,5 +809,65 @@ const tierIndex = computed(() => {
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* ========== XP BAR COSMETICS ========== */
+.xp-gradient-pulse {
+  background: linear-gradient(90deg, rgba(239,68,68,0.4), rgba(249,115,22,0.4), rgba(234,179,8,0.4), rgba(34,197,94,0.4), rgba(59,130,246,0.4), rgba(168,85,247,0.4), rgba(239,68,68,0.4));
+  background-size: 300% 100%;
+  animation: gradient-sweep 3s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes gradient-sweep {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+.xp-lightning {
+  background: linear-gradient(105deg,
+    transparent 20%,
+    rgba(255,255,255,0.6) 21%,
+    transparent 22%,
+    transparent 40%,
+    rgba(147,197,253,0.5) 41%,
+    transparent 42%,
+    transparent 65%,
+    rgba(255,255,255,0.4) 66%,
+    transparent 67%
+  );
+  background-size: 100% 200%;
+  animation: lightning-crackle 1.5s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes lightning-crackle {
+  0%, 100% { opacity: 0.3; background-position: 0% 0%; }
+  15% { opacity: 1; }
+  30% { opacity: 0.2; }
+  50% { opacity: 0.8; background-position: 100% 100%; }
+  70% { opacity: 0.1; }
+  85% { opacity: 0.9; }
+}
+
+.xp-prismatic {
+  background: linear-gradient(135deg,
+    hsla(0,100%,70%,0.3),
+    hsla(60,100%,70%,0.3),
+    hsla(120,100%,70%,0.3),
+    hsla(180,100%,70%,0.3),
+    hsla(240,100%,70%,0.3),
+    hsla(300,100%,70%,0.3),
+    hsla(360,100%,70%,0.3)
+  );
+  background-size: 200% 200%;
+  animation: prismatic-shift 4s ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+
+@keyframes prismatic-shift {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
 }
 </style>

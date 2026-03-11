@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { usePlayerStore } from '../stores/playerStore'
 import { useQuestStore } from '../stores/questStore'
@@ -10,17 +10,43 @@ import AddGoal from '../components/AddGoal.vue'
 import Heatmap from '../components/Heatmap.vue'
 import BossGate from '../components/BossGate.vue'
 import ThemePicker from '../components/ThemePicker.vue'
-import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette, RefreshCw } from 'lucide-vue-next'
+import CoinShop from '../components/CoinShop.vue'
+import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette, RefreshCw, Coins, ShoppingBag } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const playerStore = usePlayerStore()
 const questStore = useQuestStore()
 const router = useRouter()
 
+// Card cosmetic styles for app-wide panels
+const PANEL_STYLES = {
+  cardGilded: {
+    border: '1px solid rgba(251, 191, 36, 0.35)',
+    background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.15), rgba(26, 26, 46, 0.3))',
+    boxShadow: '0 0 15px rgba(251, 191, 36, 0.08)',
+  },
+  cardPhantom: {
+    border: '1px solid rgba(129, 140, 248, 0.2)',
+    background: 'rgba(49, 46, 129, 0.15)',
+    boxShadow: '0 0 20px rgba(99, 102, 241, 0.08), inset 0 0 40px rgba(99, 102, 241, 0.03)',
+  },
+  cardRunic: {
+    border: '1px solid rgba(139, 92, 246, 0.25)',
+    background: 'rgba(76, 29, 149, 0.1)',
+    boxShadow: 'inset 0 1px 0 rgba(167, 139, 250, 0.12), 0 0 18px rgba(139, 92, 246, 0.06)',
+  },
+}
+
+const panelStyle = computed(() => {
+  const style = playerStore.selectedCosmetics?.cardStyle
+  return (style && PANEL_STYLES[style]) ? PANEL_STYLES[style] : {}
+})
+
 // Mobile tab state
-const activeTab = ref('quests') // 'add' | 'quests' | 'history'
+const activeTab = ref('quests') // 'add' | 'quests' | 'history' | 'shop'
 const showThemePicker = ref(false)
 const isRefreshing = ref(false)
+const rightPanelTab = ref('history') // 'history' | 'shop' (desktop)
 
 const handleRefresh = async () => {
   isRefreshing.value = true
@@ -78,7 +104,7 @@ const handleLogout = async () => {
     <!-- ==================== MOBILE LAYOUT ==================== -->
     <div class="desk:hidden flex flex-col gap-3">
       <!-- Vital Signs (compact) -->
-      <div class="bg-astral-nebula/30 border border-white/5 rounded-xl px-4 py-3">
+      <div class="bg-astral-nebula/30 border border-white/5 rounded-xl px-4 py-3" :style="panelStyle">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
             <span class="text-gray-400 text-sm">XP</span>
@@ -86,6 +112,10 @@ const handleLogout = async () => {
                 class="text-xs text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
           </div>
           <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1 text-amber-400">
+              <Coins class="w-3.5 h-3.5" />
+              <span class="font-mono text-lg font-bold">{{ playerStore.coins }}</span>
+            </span>
             <span class="text-gray-400 text-sm">Entropy</span>
             <span class="font-mono text-lg text-red-400">-{{ playerStore.totalXPLost }}</span>
           </div>
@@ -96,7 +126,7 @@ const handleLogout = async () => {
       <TheTower layout="horizontal" />
 
       <!-- Tab Navigation -->
-      <div class="flex bg-astral-nebula/30 border border-white/5 rounded-xl overflow-hidden">
+      <div class="flex bg-astral-nebula/30 border border-white/5 rounded-xl overflow-hidden" :style="panelStyle">
         <button @click="activeTab = 'add'"
           class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors"
           :class="activeTab === 'add' ? 'bg-astral-glow/20 text-astral-glow' : 'text-gray-500 hover:text-gray-300'">
@@ -110,10 +140,16 @@ const handleLogout = async () => {
           Quests
         </button>
         <button @click="activeTab = 'history'"
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors"
+          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-r border-white/5"
           :class="activeTab === 'history' ? 'bg-astral-glow/20 text-astral-glow' : 'text-gray-500 hover:text-gray-300'">
           <CalendarDays class="w-3.5 h-3.5" />
           History
+        </button>
+        <button @click="activeTab = 'shop'"
+          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors"
+          :class="activeTab === 'shop' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-500 hover:text-gray-300'">
+          <ShoppingBag class="w-3.5 h-3.5" />
+          Shop
         </button>
       </div>
 
@@ -126,7 +162,7 @@ const handleLogout = async () => {
 
         <!-- Active Quests Tab -->
         <div v-else-if="activeTab === 'quests'">
-          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
+          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
             <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>
             <QuestFeed />
           </div>
@@ -134,9 +170,17 @@ const handleLogout = async () => {
 
         <!-- History Tab -->
         <div v-else-if="activeTab === 'history'">
-          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
+          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
             <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
             <Heatmap />
+          </div>
+        </div>
+
+        <!-- Shop Tab -->
+        <div v-else-if="activeTab === 'shop'">
+          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
+            <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Coin Shop</h2>
+            <CoinShop />
           </div>
         </div>
       </div>
@@ -148,7 +192,7 @@ const handleLogout = async () => {
       <!-- Left Panel: Quest Feed -->
       <div class="col-span-4 flex flex-col gap-6 min-w-0">
         <AddGoal />
-        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col">
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col" :style="panelStyle">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>
           <QuestFeed class="flex-1" />
         </div>
@@ -162,7 +206,7 @@ const handleLogout = async () => {
       <!-- Right Panel: Stats & History -->
       <div class="col-span-4 flex flex-col gap-6">
         <!-- Stats Card -->
-        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
           <h2 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Vital Signs</h2>
           <div class="space-y-4">
             <div class="flex justify-between">
@@ -174,13 +218,37 @@ const handleLogout = async () => {
               <span class="text-gray-400">Total Entropy</span>
               <span class="font-mono text-xl text-red-400">-{{ playerStore.totalXPLost }} XP</span>
             </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400 flex items-center gap-1"><Coins class="w-4 h-4 text-amber-400" /> Coins</span>
+              <span class="font-mono text-xl text-amber-400">{{ playerStore.coins }}</span>
+            </div>
           </div>
         </div>
 
+        <!-- Right Panel Tabs: History | Shop -->
+        <div class="flex bg-white/5 rounded-lg overflow-hidden">
+          <button @click="rightPanelTab = 'history'"
+            class="flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
+            :class="rightPanelTab === 'history' ? 'bg-astral-glow/20 text-astral-glow' : 'text-gray-500 hover:text-gray-300'">
+            History
+          </button>
+          <button @click="rightPanelTab = 'shop'"
+            class="flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
+            :class="rightPanelTab === 'shop' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-500 hover:text-gray-300'">
+            Shop
+          </button>
+        </div>
+
         <!-- Heatmap -->
-        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4">
+        <div v-if="rightPanelTab === 'history'" class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
           <Heatmap />
+        </div>
+
+        <!-- Shop -->
+        <div v-else class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
+          <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Coin Shop</h2>
+          <CoinShop />
         </div>
       </div>
 

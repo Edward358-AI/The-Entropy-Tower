@@ -133,6 +133,15 @@ export const useQuestStore = defineStore('quest', () => {
         }
 
         await playerStore.addXP(Math.round(reward))
+
+        // Award coins
+        let coinReward = Math.ceil(quest.xpReward / 10)
+        if (playerStore.streak >= 7) coinReward += 1 // streak bonus
+        if (playerStore.activeEffects.doubleCoins > 0) {
+          coinReward *= 2
+          playerStore.activeEffects.doubleCoins--
+        }
+        playerStore.addCoins(coinReward)
       }
 
       // Update Quest Status
@@ -173,9 +182,10 @@ export const useQuestStore = defineStore('quest', () => {
 
     // Abandonment penalty: if quest is overdue, apply current day's decay
     if (quest && quest.daysOverdue > 0) {
-      const penalty = getDecayPenalty(quest.daysOverdue)
+      const rawPenalty = getDecayPenalty(quest.daysOverdue)
       playerStore.streak = 0
-      await playerStore.applyDecay(penalty)
+      const dampenedPenalty = playerStore.getDampenedAmount(rawPenalty)
+      await playerStore.applyDecay(dampenedPenalty)
     }
 
     // Optimistic Update
@@ -280,18 +290,24 @@ export const useQuestStore = defineStore('quest', () => {
       const deadline = new Date(quest.deadline.seconds * 1000)
       if (!(now > deadline)) continue // Not overdue yet
 
+      const oldDays = quest.daysOverdue || 0
       const daysUpdate = Math.max(1, differenceInCalendarDays(now, deadline))
-      const wasAlreadyOverdue = quest.daysOverdue > 0
       quest.daysOverdue = daysUpdate
 
-      // Apply penalty if: new day (daily escalation) OR first-hit (just became overdue)
-      if (isNewDay || !wasAlreadyOverdue) {
-        const penalty = getDecayPenalty(daysUpdate)
+      for (let day = oldDays + 1; day <= daysUpdate; day++) {
+        const rawPenalty = getDecayPenalty(day)
+        
+        // Exact midnight boundary when this specific day of decay ostensibly occurred
+        const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + day)
+        
+        // Get the dampened amount if the dampener was active around this boundary date
+        const penalty = playerStore.getDampenedAmount(rawPenalty, boundaryDate)
+        
         totalPenalty += penalty
-
+        
         // Track TODAY as a missed date for heatmap (each overdue day counts as a miss)
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-        missedDates[`missed_${todayStr}`] = increment(1)
+        const dateStr = `${boundaryDate.getFullYear()}-${String(boundaryDate.getMonth() + 1).padStart(2, '0')}-${String(boundaryDate.getDate()).padStart(2, '0')}`
+        missedDates[`missed_${dateStr}`] = increment(1)
       }
 
       if (daysUpdate >= 5) {
@@ -300,8 +316,12 @@ export const useQuestStore = defineStore('quest', () => {
     }
 
     if (totalPenalty > 0) {
-      // Reset streak when quests are overdue
-      playerStore.streak = 0
+      // Reset streak when quests are overdue (unless Streak Freeze)
+      if (playerStore.inventory.streakFreeze > 0) {
+        playerStore.inventory.streakFreeze--
+      } else {
+        playerStore.streak = 0
+      }
       await playerStore.applyDecay(totalPenalty)
 
       // Log missed dates to heatmap history
@@ -374,6 +394,40 @@ export const useQuestStore = defineStore('quest', () => {
     }
   }
 
+  // Revival Elixir: restore a corrupted quest
+  const reviveQuest = async (questId) => {
+    if (!auth.currentUser) return false
+    if (playerStore.inventory.revivalElixir <= 0) return false
+
+    const quest = quests.value.find(q => q.id === questId)
+    if (!quest || quest.status !== 'corrupted') return false
+
+    playerStore.inventory.revivalElixir--
+
+    // Reset quest state
+    quest.status = 'active'
+    quest.daysOverdue = 0
+
+    // Extend deadline by 48h from now
+    const newDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000)
+    const { Timestamp } = await import('firebase/firestore')
+    quest.deadline = Timestamp.fromDate(newDeadline)
+
+    // Persist
+    try {
+      const questRef = doc(db, 'users', auth.currentUser.uid, 'quests', questId)
+      await withTimeout(updateDoc(questRef, {
+        status: 'active',
+        daysOverdue: 0,
+        deadline: quest.deadline
+      }))
+      await playerStore.saveStats()
+    } catch (err) {
+      console.error('Failed to revive quest:', err)
+    }
+    return true
+  }
+
   return {
     quests,
     loading,
@@ -384,6 +438,7 @@ export const useQuestStore = defineStore('quest', () => {
     deleteQuest,
     editQuest,
     checkDecay,
-    computeStreak
+    computeStreak,
+    reviveQuest
   }
 })

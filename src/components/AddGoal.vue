@@ -1,13 +1,26 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuestStore } from '../stores/questStore'
+import { usePlayerStore } from '../stores/playerStore'
 import { breakDownGoal } from '../services/aiService'
 import { Timestamp } from 'firebase/firestore'
 import { addDays, format } from 'date-fns'
 import { Sparkles, PenTool, Plus } from 'lucide-vue-next'
 
 const questStore = useQuestStore()
+const playerStore = usePlayerStore()
 const mode = ref('ai') // 'ai' | 'manual'
+
+// Card cosmetic styles for the panel
+const PANEL_STYLES = {
+  cardGilded: { border: '1px solid rgba(251, 191, 36, 0.35)', background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.15), rgba(26, 26, 46, 0.3))', boxShadow: '0 0 15px rgba(251, 191, 36, 0.08)' },
+  cardPhantom: { border: '1px solid rgba(129, 140, 248, 0.2)', background: 'rgba(49, 46, 129, 0.15)', boxShadow: '0 0 20px rgba(99, 102, 241, 0.08), inset 0 0 40px rgba(99, 102, 241, 0.03)' },
+  cardRunic: { border: '1px solid rgba(139, 92, 246, 0.25)', background: 'rgba(76, 29, 149, 0.1)', boxShadow: 'inset 0 1px 0 rgba(167, 139, 250, 0.12), 0 0 18px rgba(139, 92, 246, 0.06)' },
+}
+const panelStyle = computed(() => {
+  const style = playerStore.selectedCosmetics?.cardStyle
+  return (style && PANEL_STYLES[style]) ? PANEL_STYLES[style] : {}
+})
 
 // AI Data
 const aiInput = ref('')
@@ -77,7 +90,7 @@ const handleManualAdd = async () => {
 </script>
 
 <template>
-  <div class="bg-astral-nebula/40 border border-white/5 rounded-xl p-4 transition-all duration-300 overflow-hidden">
+  <div class="bg-astral-nebula/40 border border-white/5 rounded-xl p-4 transition-all duration-300 overflow-hidden" :style="panelStyle">
     <!-- Tabs -->
     <div class="flex gap-4 mb-4 border-b border-white/5 pb-2">
       <button @click="mode = 'ai'" class="flex items-center gap-2 text-sm font-bold pb-2 transition-colors relative"

@@ -3,9 +3,11 @@ import { onMounted, ref } from 'vue'
 import { useQuestStore } from '../stores/questStore'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Timestamp } from 'firebase/firestore'
-import { CheckCircle, AlertTriangle, ShieldAlert, Trash2, Loader2, Pencil, X, Check } from 'lucide-vue-next'
+import { CheckCircle, AlertTriangle, ShieldAlert, Trash2, Loader2, Pencil, X, Check, Skull } from 'lucide-vue-next'
+import { usePlayerStore } from '../stores/playerStore'
 
 const questStore = useQuestStore()
+const playerStore = usePlayerStore()
 
 // Edit state
 const editingId = ref(null)
@@ -24,11 +26,38 @@ const getDeadlineText = (timestamp) => {
   return formatDistanceToNow(date, { addSuffix: true })
 }
 
+const CARD_STYLES = {
+  cardGilded: {
+    border: '1px solid rgba(251, 191, 36, 0.6)',
+    background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.2), rgba(113, 63, 18, 0.1))',
+    boxShadow: '0 0 12px rgba(251, 191, 36, 0.15)',
+  },
+  cardPhantom: {
+    border: '1px solid rgba(129, 140, 248, 0.3)',
+    background: 'rgba(49, 46, 129, 0.2)',
+    boxShadow: '0 0 20px rgba(99, 102, 241, 0.12), inset 0 0 30px rgba(99, 102, 241, 0.05)',
+  },
+  cardRunic: {
+    border: '1px solid rgba(139, 92, 246, 0.4)',
+    background: 'rgba(76, 29, 149, 0.15)',
+    boxShadow: 'inset 0 1px 0 rgba(167, 139, 250, 0.2), 0 0 15px rgba(139, 92, 246, 0.1)',
+  },
+}
+
 const getStatusColor = (quest) => {
   if (quest.status === 'corrupted') return 'border-red-500 bg-red-900/20'
   if (quest.daysOverdue >= 3) return 'border-orange-500 bg-orange-900/10'
   if (quest.daysOverdue > 0) return 'border-yellow-500 bg-yellow-900/10'
+  const style = playerStore.selectedCosmetics?.cardStyle
+  if (style && CARD_STYLES[style]) return '' // handled by inline style
   return 'border-white/10 bg-astral-nebula/40 hover:border-astral-glow/50'
+}
+
+const getCardStyle = (quest) => {
+  if (quest.status === 'corrupted' || quest.daysOverdue > 0) return {}
+  const style = playerStore.selectedCosmetics?.cardStyle
+  if (style && CARD_STYLES[style]) return CARD_STYLES[style]
+  return {}
 }
 
 const startEdit = (quest) => {
@@ -82,7 +111,8 @@ const saveEdit = async () => {
     <transition-group name="list" tag="div" class="space-y-3">
       <div v-for="quest in questStore.quests" :key="quest.id"
         class="border rounded-xl p-4 transition-all duration-300 group relative overflow-hidden"
-        :class="getStatusColor(quest)">
+        :class="getStatusColor(quest)"
+        :style="getCardStyle(quest)">
         <!-- Normal View -->
         <div v-if="editingId !== quest.id" class="flex justify-between items-start relative z-10">
           <div class="flex-1">
@@ -127,6 +157,14 @@ const saveEdit = async () => {
               class="p-2 rounded-full bg-white/5 hover:bg-astral-glow hover:text-white text-gray-400 transition-colors"
               title="Complete Quest">
               <CheckCircle class="w-6 h-6" />
+            </button>
+
+            <!-- Revival Elixir for corrupted quests -->
+            <button v-if="quest.status === 'corrupted' && playerStore.inventory.revivalElixir > 0"
+              @click.stop="questStore.reviveQuest(quest.id)"
+              class="p-2 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 hover:text-purple-300 transition-colors"
+              title="Use Revival Elixir">
+              <Skull class="w-4 h-4" />
             </button>
           </div>
         </div>

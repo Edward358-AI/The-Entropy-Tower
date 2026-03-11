@@ -16,6 +16,18 @@ onMounted(() => {
 
 // Page-wide ambient effect class — all tiers
 const pageEffectClass = computed(() => {
+  // Premium theme from shop overrides tier theme
+  const premium = playerStore.selectedCosmetics?.theme
+  if (premium) {
+    const premiumMap = {
+      'themeCrimson': 'page-fx-crimson',
+      'themeAbyssal': 'page-fx-abyssal',
+      'themeNeon':    'page-fx-neon',
+      'themeAurora':  'page-fx-aurora-premium',
+      'themeSolar':   'page-fx-solar',
+    }
+    if (premiumMap[premium]) return premiumMap[premium]
+  }
   const mat = playerStore.activePageTheme
   const map = {
     'Stone': 'page-fx-stone',
@@ -331,5 +343,66 @@ const pageEffectClass = computed(() => {
     opacity: 1;
     transform: scale(1.03);
   }
+}
+
+/* ========== PREMIUM THEMES ========== */
+
+/* Crimson Forge: deep reds with ember glow */
+.page-fx-crimson {
+  background:
+    radial-gradient(200px 200px at 15% 20%, rgba(220, 38, 38, 0.3) 0%, transparent 70%),
+    radial-gradient(250px 250px at 80% 75%, rgba(185, 28, 28, 0.25) 0%, transparent 70%),
+    radial-gradient(180px 180px at 50% 40%, rgba(239, 68, 68, 0.15) 0%, transparent 70%),
+    radial-gradient(120px 120px at 30% 80%, rgba(248, 113, 113, 0.2) 0%, transparent 70%);
+  animation: page-fx-glow 6s ease-in-out infinite;
+}
+
+/* Abyssal: dark ocean blues with depth */
+.page-fx-abyssal {
+  background:
+    radial-gradient(300px 300px at 50% 110%, rgba(30, 58, 138, 0.4) 0%, transparent 70%),
+    radial-gradient(200px 200px at 15% 30%, rgba(37, 99, 235, 0.2) 0%, transparent 70%),
+    radial-gradient(180px 180px at 85% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 70%),
+    radial-gradient(250px 250px at 50% 50%, rgba(29, 78, 216, 0.1) 0%, transparent 70%);
+  animation: page-fx-drift 14s ease-in-out infinite;
+}
+
+/* Neon Circuit: cyberpunk pink/cyan glow */
+.page-fx-neon {
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(236, 72, 153, 0.3) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(34, 211, 238, 0.3) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+    repeating-linear-gradient(90deg, transparent 0px, transparent 80px, rgba(236, 72, 153, 0.05) 80px, rgba(236, 72, 153, 0.05) 81px);
+  animation: page-fx-neon-pulse 4s ease-in-out infinite;
+}
+
+@keyframes page-fx-neon-pulse {
+  0%, 100% { opacity: 0.7; }
+  30% { opacity: 1; }
+  60% { opacity: 0.8; }
+  80% { opacity: 1; }
+}
+
+/* Aurora Premium: northern lights with hue shift */
+.page-fx-aurora-premium {
+  background: linear-gradient(160deg,
+    rgba(34, 197, 94, 0.25) 0%,
+    rgba(59, 130, 246, 0.2) 20%,
+    rgba(168, 85, 247, 0.22) 40%,
+    rgba(236, 72, 153, 0.18) 60%,
+    rgba(34, 211, 238, 0.2) 80%,
+    transparent 95%);
+  animation: page-fx-aurora 8s ease-in-out infinite;
+}
+
+/* Solar Flare: warm gold-to-orange radiance */
+.page-fx-solar {
+  background:
+    radial-gradient(ellipse at 50% -15%, rgba(251, 191, 36, 0.4) 0%, transparent 55%),
+    radial-gradient(200px 200px at 20% 50%, rgba(245, 158, 11, 0.2) 0%, transparent 70%),
+    radial-gradient(200px 200px at 80% 50%, rgba(234, 179, 8, 0.2) 0%, transparent 70%),
+    radial-gradient(300px 300px at 50% 100%, rgba(249, 115, 22, 0.15) 0%, transparent 60%);
+  animation: page-fx-glow 7s ease-in-out infinite;
 }
 </style>

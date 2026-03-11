@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Swords, TrendingUp, Flame, CalendarDays, Shield, Zap, Clock, Brain, Star, Palette } from 'lucide-vue-next'
+import { ArrowLeft, Swords, TrendingUp, Flame, CalendarDays, Shield, Zap, Clock, Brain, Star, Palette, Coins } from 'lucide-vue-next'
 
 const router = useRouter()
 </script>
@@ -338,6 +338,53 @@ const router = useRouter()
           </div>
           <p class="mt-2">Click (or tap on mobile) any day to see the exact count of completed and missed quests.
             Navigate between months using the arrow buttons.</p>
+        </div>
+      </section>
+
+      <!-- Section: Coin Shop -->
+      <section class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-amber-500/10">
+            <Coins class="w-5 h-5 text-amber-400" />
+          </div>
+          <h2 class="text-xl font-bold text-white">Coin Shop</h2>
+        </div>
+        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-6 space-y-4 text-sm text-gray-400 leading-relaxed">
+          <div>
+            <h3 class="text-white font-bold mb-1">💰 Earning Coins</h3>
+            <p>Coins are a stable currency that never decays. You earn them from:</p>
+            <ul class="list-disc list-inside ml-2 mt-1 space-y-0.5">
+              <li><span class="text-amber-400 font-bold">⌈XP/10⌉</span> coins per quest completed (~2-5 per quest)</li>
+              <li><span class="text-amber-400 font-bold">+5</span> coins on every level up</li>
+              <li><span class="text-amber-400 font-bold">+15</span> coins on boss gate clear (+5 from level = 20 total)</li>
+              <li><span class="text-amber-400 font-bold">+1</span> bonus per quest at 7+ streak</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-white font-bold mb-1">🛡️ Consumables</h3>
+            <p>Purchase and activate powerups from the shop. Each has a max inventory limit:</p>
+            <ul class="list-disc list-inside ml-2 mt-1 space-y-0.5">
+              <li><span class="text-white font-bold">Entropy Shield</span> (50🪙, max 2) — blocks next decay that would de-level you</li>
+              <li><span class="text-white font-bold">Streak Freeze</span> (40🪙, max 2) — preserves streak through 1 missed day</li>
+              <li><span class="text-white font-bold">XP Boost</span> (30🪙, max 3) — ×1.5 XP on next 3 completions</li>
+              <li><span class="text-white font-bold">Double Coins</span> (35🪙, max 3) — 2× coins on next 5 completions</li>
+              <li><span class="text-white font-bold">Decay Dampener</span> (25🪙, max 1) — halves all decay for 24 hours</li>
+              <li><span class="text-white font-bold">Revival Elixir</span> (75🪙, max 1) — restores a corrupted quest with +48h deadline</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-white font-bold mb-1">🎨 Cosmetics</h3>
+            <p>Permanent upgrades that customize your experience:</p>
+            <ul class="list-disc list-inside ml-2 mt-1 space-y-0.5">
+              <li><span class="text-white font-bold">Premium Themes</span> (150-200🪙) — exclusive page backgrounds</li>
+              <li><span class="text-white font-bold">Heatmap Colors</span> (60🪙) — custom color schemes for your calendar</li>
+              <li><span class="text-white font-bold">Quest Card Styles</span> (80🪙) — custom card borders and effects</li>
+              <li><span class="text-white font-bold">XP Bar Styles</span> (50🪙) — animated overlay effects on your tower bar</li>
+            </ul>
+          </div>
+          <p class="text-xs text-gray-500 border-t border-white/5 pt-3">
+            💡 <span class="text-gray-400">Tip:</span> Entropy Shields are the most impactful purchase early on — they protect your hard-earned levels from decay spikes.
+          </p>
         </div>
       </section>
 

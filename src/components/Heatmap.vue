@@ -4,9 +4,67 @@ import { db, auth } from '../services/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isToday } from 'date-fns'
 import { useQuestStore } from '../stores/questStore'
+import { usePlayerStore } from '../stores/playerStore'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const questStore = useQuestStore()
+const playerStore = usePlayerStore()
+
+// Heatmap color schemes — each has good, bad, mixed + text + legend colors
+const HEATMAP_SCHEMES = {
+  default: {
+    good: 'bg-emerald-500/50 border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]',
+    goodText: 'text-emerald-200',
+    bad: 'bg-red-500/40 border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]',
+    badText: 'text-red-300',
+    mixedText: 'text-yellow-200',
+    mixedGood: 'rgba(16, 185, 129, 0.5)', mixedBad: 'rgba(239, 68, 68, 0.5)', mixedBorder: 'rgba(234, 179, 8, 0.5)',
+    legendGood: 'bg-emerald-500/50 border-emerald-400/50',
+    legendBad:  'bg-red-500/40 border-red-400/50',
+  },
+  heatmapOcean: {
+    good: 'bg-blue-500/50 border-blue-400/50 shadow-[0_0_10px_rgba(59,130,246,0.3)]',
+    goodText: 'text-blue-200',
+    bad: 'bg-slate-500/40 border-slate-400/50 shadow-[0_0_10px_rgba(100,116,139,0.3)]',
+    badText: 'text-slate-300',
+    mixedText: 'text-cyan-200',
+    mixedGood: 'rgba(59, 130, 246, 0.5)', mixedBad: 'rgba(100, 116, 139, 0.5)', mixedBorder: 'rgba(34, 211, 238, 0.5)',
+    legendGood: 'bg-blue-500/50 border-blue-400/50',
+    legendBad:  'bg-slate-500/40 border-slate-400/50',
+  },
+  heatmapViolet: {
+    good: 'bg-purple-500/50 border-purple-400/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]',
+    goodText: 'text-purple-200',
+    bad: 'bg-rose-500/40 border-rose-400/50 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    badText: 'text-rose-300',
+    mixedText: 'text-fuchsia-200',
+    mixedGood: 'rgba(168, 85, 247, 0.5)', mixedBad: 'rgba(244, 63, 94, 0.5)', mixedBorder: 'rgba(217, 70, 239, 0.5)',
+    legendGood: 'bg-purple-500/50 border-purple-400/50',
+    legendBad:  'bg-rose-500/40 border-rose-400/50',
+  },
+  heatmapEmber: {
+    good: 'bg-orange-500/50 border-orange-400/50 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    goodText: 'text-orange-200',
+    bad: 'bg-red-700/40 border-red-600/50 shadow-[0_0_10px_rgba(185,28,28,0.3)]',
+    badText: 'text-red-300',
+    mixedText: 'text-amber-200',
+    mixedGood: 'rgba(249, 115, 22, 0.5)', mixedBad: 'rgba(185, 28, 28, 0.5)', mixedBorder: 'rgba(245, 158, 11, 0.5)',
+    legendGood: 'bg-orange-500/50 border-orange-400/50',
+    legendBad:  'bg-red-700/40 border-red-600/50',
+  },
+  heatmapMono: {
+    good: 'bg-gray-300/40 border-gray-300/50 shadow-[0_0_10px_rgba(209,213,219,0.2)]',
+    goodText: 'text-gray-200',
+    bad: 'bg-gray-600/40 border-gray-500/50 shadow-[0_0_10px_rgba(107,114,128,0.2)]',
+    badText: 'text-gray-400',
+    mixedText: 'text-gray-300',
+    mixedGood: 'rgba(209, 213, 219, 0.4)', mixedBad: 'rgba(107, 114, 128, 0.4)', mixedBorder: 'rgba(156, 163, 175, 0.5)',
+    legendGood: 'bg-gray-300/40 border-gray-300/50',
+    legendBad:  'bg-gray-600/40 border-gray-500/50',
+  },
+}
+
+const activeScheme = computed(() => HEATMAP_SCHEMES[playerStore.selectedCosmetics?.heatmap] || HEATMAP_SCHEMES.default)
 
 const history = ref([])
 const currentMonth = ref(new Date())
@@ -104,17 +162,26 @@ watch(() => questStore.heatmapVersion, () => {
 
 const getColor = (day) => {
   if (!day.inMonth) return 'bg-transparent border-transparent opacity-20'
-  if (day.status === 'mixed') return 'heatmap-mixed border-yellow-400/50'
-  if (day.status === 'good') return 'bg-emerald-500/50 border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-  if (day.status === 'bad') return 'bg-red-500/40 border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+  if (day.status === 'mixed') return '' // handled by inline style
+  if (day.status === 'good') return activeScheme.value.good
+  if (day.status === 'bad') return activeScheme.value.bad
   return 'bg-white/5 border-transparent'
 }
 
 const getTextColor = (day) => {
-  if (day.status === 'good') return 'text-emerald-200'
-  if (day.status === 'bad') return 'text-red-300'
-  if (day.status === 'mixed') return 'text-yellow-200'
+  if (day.status === 'good') return activeScheme.value.goodText
+  if (day.status === 'bad') return activeScheme.value.badText
+  if (day.status === 'mixed') return activeScheme.value.mixedText
   return 'text-gray-600'
+}
+
+const getMixedStyle = (day) => {
+  if (day.status !== 'mixed' || !day.inMonth) return {}
+  const s = activeScheme.value
+  return {
+    background: `linear-gradient(135deg, ${s.mixedGood} 50%, ${s.mixedBad} 50%)`,
+    borderColor: s.mixedBorder,
+  }
 }
 </script>
 
@@ -150,7 +217,8 @@ const getTextColor = (day) => {
     <div class="grid grid-cols-7 gap-1 content-start">
       <div v-for="day in history" :key="day.dateStr" @click="toggleDay(day)"
         class="aspect-square rounded-sm border transition-all duration-300 hover:scale-110 relative group flex items-center justify-center cursor-pointer"
-        :class="[getColor(day), day.isToday ? 'ring-1 ring-astral-glow/60' : '']">
+        :class="[getColor(day), day.isToday ? 'ring-1 ring-astral-glow/60' : '']"
+        :style="getMixedStyle(day)">
         <!-- Day Number -->
         <span v-if="day.inMonth" class="text-[9px] font-mono" :class="getTextColor(day)">{{ day.dayNum }}</span>
 
@@ -170,23 +238,18 @@ const getTextColor = (day) => {
     <div
       class="flex items-center gap-3 mt-3 text-[10px] text-gray-400 uppercase tracking-widest justify-center flex-wrap">
       <div class="flex items-center gap-1.5">
-        <div class="w-3 h-3 rounded-sm bg-emerald-500/50 border border-emerald-400/50"></div>
+        <div class="w-3 h-3 rounded-sm border" :class="activeScheme.legendGood"></div>
         <span>Completed</span>
       </div>
       <div class="flex items-center gap-1.5">
-        <div class="w-3 h-3 rounded-sm bg-red-500/40 border border-red-400/50"></div>
+        <div class="w-3 h-3 rounded-sm border" :class="activeScheme.legendBad"></div>
         <span>Missed</span>
       </div>
       <div class="flex items-center gap-1.5">
-        <div class="w-3 h-3 rounded-sm heatmap-mixed border border-yellow-400/50"></div>
+        <div class="w-3 h-3 rounded-sm border"
+          :style="{ background: `linear-gradient(135deg, ${activeScheme.mixedGood} 50%, ${activeScheme.mixedBad} 50%)`, borderColor: activeScheme.mixedBorder }"></div>
         <span>Mixed</span>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.heatmap-mixed {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.5) 50%, rgba(239, 68, 68, 0.5) 50%);
-}
-</style>
