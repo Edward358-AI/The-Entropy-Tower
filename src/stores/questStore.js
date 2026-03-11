@@ -114,10 +114,18 @@ export const useQuestStore = defineStore('quest', () => {
         let reward = quest.xpReward
 
         // Momentum Multiplier
-        if (playerStore.streak >= 14) reward *= 2.5
-        else if (playerStore.streak >= 7) reward *= 2.0
-        else if (playerStore.streak >= 5) reward *= 1.6
-        else if (playerStore.streak >= 3) reward *= 1.3
+        let effectiveStreak = playerStore.streak
+        if (playerStore.activeEffects.momentumSurgeExpires && new Date(playerStore.activeEffects.momentumSurgeExpires) > new Date()) {
+          if (effectiveStreak < 3) effectiveStreak = 3
+          else if (effectiveStreak < 5) effectiveStreak = 5
+          else if (effectiveStreak < 7) effectiveStreak = 7
+          else if (effectiveStreak < 14) effectiveStreak = 14
+        }
+
+        if (effectiveStreak >= 14) reward *= 2.5
+        else if (effectiveStreak >= 7) reward *= 2.0
+        else if (effectiveStreak >= 5) reward *= 1.6
+        else if (effectiveStreak >= 3) reward *= 1.3
 
         // Early Bird Bonus
         if (quest.deadline) {

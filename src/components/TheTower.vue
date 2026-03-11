@@ -74,6 +74,7 @@ const xpBarOverlay = computed(() => {
   if (sel === 'xpPrismatic') return 'xp-prismatic'
   return null
 })
+
 </script>
 
 <template>
@@ -110,128 +111,132 @@ const xpBarOverlay = computed(() => {
   </div>
 
   <!-- Vertical Layout (Desktop) -->
-  <div v-else class="relative w-24 mx-auto">
-    <!-- Outer Aura -->
-    <div v-if="tierIndex >= 4" class="absolute -inset-3 rounded-t-xl pointer-events-none" :class="{
-      'astral-aura': material === 'Astral',
-      'void-aura': material === 'Void',
-      'celestial-aura': material === 'Celestial',
-      'ethereal-aura': material === 'Ethereal',
-      'mythic-aura': material === 'Mythic',
-      'transcendent-aura': material === 'Transcendent',
-      'omega-aura': material === 'Omega',
-    }"></div>
-
-    <!-- Outer Glow (Gold/Diamond) -->
-    <div v-if="material === 'Gold'" class="absolute -inset-1.5 rounded-t-lg gold-outer-glow pointer-events-none"></div>
-    <div v-if="material === 'Diamond'" class="absolute -inset-2 rounded-t-lg diamond-outer-glow pointer-events-none">
+  <div v-else class="flex flex-col items-center">
+    <!-- Level Indicator (Outside) -->
+    <div class="text-center z-10 mb-6 drop-shadow-md">
+      <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Level</div>
+      <div class="text-3xl font-bold font-display text-white">{{ playerStore.level }}</div>
+      <div class="text-xs font-bold mt-1" :class="materialTextClass">{{ material }} Age</div>
     </div>
 
-    <!-- Main Tower Body -->
-    <div class="relative w-full h-[500px] border rounded-t-lg overflow-hidden backdrop-blur-sm"
-      :class="towerBorderClass">
+    <div class="relative w-24 mx-auto">
+      <!-- Outer Aura -->
+      <div v-if="tierIndex >= 4" class="absolute -inset-3 rounded-t-xl pointer-events-none" :class="{
+        'astral-aura': material === 'Astral',
+        'void-aura': material === 'Void',
+        'celestial-aura': material === 'Celestial',
+        'ethereal-aura': material === 'Ethereal',
+        'mythic-aura': material === 'Mythic',
+        'transcendent-aura': material === 'Transcendent',
+        'omega-aura': material === 'Omega',
+      }"></div>
 
-      <!-- Background effects for high tiers -->
-      <div v-if="material === 'Astral'" class="absolute inset-0 starfield pointer-events-none"></div>
-      <div v-if="material === 'Void'" class="absolute inset-0 void-bg pointer-events-none"></div>
-      <div v-if="material === 'Celestial'" class="absolute inset-0 celestial-bg pointer-events-none"></div>
-      <div v-if="material === 'Ethereal'" class="absolute inset-0 ethereal-bg pointer-events-none"></div>
-      <div v-if="material === 'Mythic'" class="absolute inset-0 mythic-bg pointer-events-none"></div>
-      <div v-if="material === 'Transcendent'" class="absolute inset-0 transcendent-bg pointer-events-none"></div>
-      <div v-if="material === 'Omega'" class="absolute inset-0 omega-bg pointer-events-none"></div>
-
-      <!-- Level Indicator -->
-      <div class="absolute top-4 left-0 right-0 text-center z-10">
-        <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Level</div>
-        <div class="text-3xl font-bold font-display text-white">{{ playerStore.level }}</div>
-        <div class="text-xs font-bold mt-1" :class="materialTextClass">{{ material }} Age</div>
+      <!-- Outer Glow (Gold/Diamond) -->
+      <div v-if="material === 'Gold'" class="absolute -inset-1.5 rounded-t-lg gold-outer-glow pointer-events-none">
+      </div>
+      <div v-if="material === 'Diamond'" class="absolute -inset-2 rounded-t-lg diamond-outer-glow pointer-events-none">
       </div>
 
-      <!-- The Fill Bar -->
-      <div class="absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out overflow-hidden"
-        :class="`bar-${material.toLowerCase()}`" :style="{ height: `${progressPercent}%` }">
-        <!-- Stone -->
-        <div v-if="material === 'Stone'" class="absolute inset-0 bg-gradient-to-t from-black/40 to-white/10"></div>
+      <!-- Main Tower Body -->
+      <div class="relative w-full h-[500px] border rounded-t-lg overflow-hidden backdrop-blur-sm"
+        :class="towerBorderClass">
 
-        <!-- Iron -->
-        <template v-if="material === 'Iron'">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-white/20"></div>
-          <div class="absolute inset-0 iron-shimmer"></div>
-        </template>
+        <!-- Background effects for high tiers -->
+        <div v-if="material === 'Astral'" class="absolute inset-0 starfield pointer-events-none"></div>
+        <div v-if="material === 'Void'" class="absolute inset-0 void-bg pointer-events-none"></div>
+        <div v-if="material === 'Celestial'" class="absolute inset-0 celestial-bg pointer-events-none"></div>
+        <div v-if="material === 'Ethereal'" class="absolute inset-0 ethereal-bg pointer-events-none"></div>
+        <div v-if="material === 'Mythic'" class="absolute inset-0 mythic-bg pointer-events-none"></div>
+        <div v-if="material === 'Transcendent'" class="absolute inset-0 transcendent-bg pointer-events-none"></div>
+        <div v-if="material === 'Omega'" class="absolute inset-0 omega-bg pointer-events-none"></div>
 
-        <!-- Gold -->
-        <template v-if="material === 'Gold'">
-          <div class="absolute inset-0 gold-gradient"></div>
-          <div class="absolute inset-0 gold-sparkles"></div>
-          <div class="absolute inset-0 gold-shimmer"></div>
-        </template>
+        <!-- The Fill Bar -->
+        <div class="absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out overflow-hidden"
+          :class="`bar-${material.toLowerCase()}`" :style="{ height: `${progressPercent}%` }">
+          <!-- Stone -->
+          <div v-if="material === 'Stone'" class="absolute inset-0 bg-gradient-to-t from-black/40 to-white/10"></div>
 
-        <!-- Diamond -->
-        <template v-if="material === 'Diamond'">
-          <div class="absolute inset-0 diamond-gradient"></div>
-          <div class="absolute inset-0 diamond-refraction"></div>
-          <div class="absolute inset-0 diamond-shimmer"></div>
-        </template>
+          <!-- Iron -->
+          <template v-if="material === 'Iron'">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-white/20"></div>
+            <div class="absolute inset-0 iron-shimmer"></div>
+          </template>
 
-        <!-- Astral -->
-        <template v-if="material === 'Astral'">
-          <div class="absolute inset-0 astral-nebula-gradient"></div>
-          <div class="absolute inset-0 astral-stars"></div>
-          <div class="absolute inset-0 astral-energy"></div>
-        </template>
+          <!-- Gold -->
+          <template v-if="material === 'Gold'">
+            <div class="absolute inset-0 gold-gradient"></div>
+            <div class="absolute inset-0 gold-sparkles"></div>
+            <div class="absolute inset-0 gold-shimmer"></div>
+          </template>
 
-        <!-- Void -->
-        <template v-if="material === 'Void'">
-          <div class="absolute inset-0 void-fill"></div>
-          <div class="absolute inset-0 void-particles"></div>
-          <div class="absolute inset-0 void-pulse"></div>
-        </template>
+          <!-- Diamond -->
+          <template v-if="material === 'Diamond'">
+            <div class="absolute inset-0 diamond-gradient"></div>
+            <div class="absolute inset-0 diamond-refraction"></div>
+            <div class="absolute inset-0 diamond-shimmer"></div>
+          </template>
 
-        <!-- Celestial -->
-        <template v-if="material === 'Celestial'">
-          <div class="absolute inset-0 celestial-fill"></div>
-          <div class="absolute inset-0 celestial-rays"></div>
-          <div class="absolute inset-0 celestial-sparkle"></div>
-        </template>
+          <!-- Astral -->
+          <template v-if="material === 'Astral'">
+            <div class="absolute inset-0 astral-nebula-gradient"></div>
+            <div class="absolute inset-0 astral-stars"></div>
+            <div class="absolute inset-0 astral-energy"></div>
+          </template>
 
-        <!-- Ethereal -->
-        <template v-if="material === 'Ethereal'">
-          <div class="absolute inset-0 ethereal-fill"></div>
-          <div class="absolute inset-0 ethereal-wisps"></div>
-          <div class="absolute inset-0 ethereal-glow"></div>
-        </template>
+          <!-- Void -->
+          <template v-if="material === 'Void'">
+            <div class="absolute inset-0 void-fill"></div>
+            <div class="absolute inset-0 void-particles"></div>
+            <div class="absolute inset-0 void-pulse"></div>
+          </template>
 
-        <!-- Mythic -->
-        <template v-if="material === 'Mythic'">
-          <div class="absolute inset-0 mythic-fill"></div>
-          <div class="absolute inset-0 mythic-aurora"></div>
-          <div class="absolute inset-0 mythic-stars"></div>
-        </template>
+          <!-- Celestial -->
+          <template v-if="material === 'Celestial'">
+            <div class="absolute inset-0 celestial-fill"></div>
+            <div class="absolute inset-0 celestial-rays"></div>
+            <div class="absolute inset-0 celestial-sparkle"></div>
+          </template>
 
-        <!-- Transcendent -->
-        <template v-if="material === 'Transcendent'">
-          <div class="absolute inset-0 transcendent-fill"></div>
-          <div class="absolute inset-0 transcendent-glitch"></div>
-          <div class="absolute inset-0 transcendent-chromatic"></div>
-        </template>
+          <!-- Ethereal -->
+          <template v-if="material === 'Ethereal'">
+            <div class="absolute inset-0 ethereal-fill"></div>
+            <div class="absolute inset-0 ethereal-wisps"></div>
+            <div class="absolute inset-0 ethereal-glow"></div>
+          </template>
 
-        <!-- Omega -->
-        <template v-if="material === 'Omega'">
-          <div class="absolute inset-0 omega-fill"></div>
-          <div class="absolute inset-0 omega-singularity"></div>
-          <div class="absolute inset-0 omega-corona"></div>
-        </template>
+          <!-- Mythic -->
+          <template v-if="material === 'Mythic'">
+            <div class="absolute inset-0 mythic-fill"></div>
+            <div class="absolute inset-0 mythic-aurora"></div>
+            <div class="absolute inset-0 mythic-stars"></div>
+          </template>
 
-        <!-- XP Bar Cosmetic Overlay -->
-        <div v-if="xpBarOverlay" class="absolute inset-0 z-20" :class="xpBarOverlay"></div>
-      </div>
+          <!-- Transcendent -->
+          <template v-if="material === 'Transcendent'">
+            <div class="absolute inset-0 transcendent-fill"></div>
+            <div class="absolute inset-0 transcendent-glitch"></div>
+            <div class="absolute inset-0 transcendent-chromatic"></div>
+          </template>
 
-      <!-- Entropy Cracks -->
-      <div v-if="hasOverdueQuests"
-        class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-red-900/50 to-transparent pointer-events-none z-10">
-        <div class="absolute bottom-2 left-0 right-0 text-center text-xs text-red-400 font-bold animate-pulse">
-          ENTROPY DETECTED
+          <!-- Omega -->
+          <template v-if="material === 'Omega'">
+            <div class="absolute inset-0 omega-fill"></div>
+            <div class="absolute inset-0 omega-singularity"></div>
+            <div class="absolute inset-0 omega-corona"></div>
+          </template>
+
+          <!-- XP Bar Cosmetic Overlay -->
+          <div v-if="xpBarOverlay" class="absolute inset-0 z-20" :class="xpBarOverlay"></div>
         </div>
+
+        <!-- Entropy Cracks -->
+        <div v-if="hasOverdueQuests"
+          class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-red-900/50 to-transparent pointer-events-none z-10">
+          <div class="absolute bottom-2 left-0 right-0 text-center text-xs text-red-400 font-bold animate-pulse">
+            ENTROPY DETECTED
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -813,61 +818,94 @@ const xpBarOverlay = computed(() => {
 
 /* ========== XP BAR COSMETICS ========== */
 .xp-gradient-pulse {
-  background: linear-gradient(90deg, rgba(239,68,68,0.4), rgba(249,115,22,0.4), rgba(234,179,8,0.4), rgba(34,197,94,0.4), rgba(59,130,246,0.4), rgba(168,85,247,0.4), rgba(239,68,68,0.4));
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.7), rgba(249, 115, 22, 0.7), rgba(234, 179, 8, 0.7), rgba(34, 197, 94, 0.7), rgba(59, 130, 246, 0.7), rgba(168, 85, 247, 0.7), rgba(239, 68, 68, 0.7));
   background-size: 300% 100%;
   animation: gradient-sweep 3s linear infinite;
   mix-blend-mode: screen;
 }
 
 @keyframes gradient-sweep {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 300% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 300% 50%;
+  }
 }
 
 .xp-lightning {
   background: linear-gradient(105deg,
-    transparent 20%,
-    rgba(255,255,255,0.6) 21%,
-    transparent 22%,
-    transparent 40%,
-    rgba(147,197,253,0.5) 41%,
-    transparent 42%,
-    transparent 65%,
-    rgba(255,255,255,0.4) 66%,
-    transparent 67%
-  );
+      transparent 20%,
+      rgba(255, 255, 255, 0.6) 21%,
+      transparent 22%,
+      transparent 40%,
+      rgba(147, 197, 253, 0.5) 41%,
+      transparent 42%,
+      transparent 65%,
+      rgba(255, 255, 255, 0.4) 66%,
+      transparent 67%);
   background-size: 100% 200%;
   animation: lightning-crackle 1.5s ease-in-out infinite;
   mix-blend-mode: screen;
 }
 
 @keyframes lightning-crackle {
-  0%, 100% { opacity: 0.3; background-position: 0% 0%; }
-  15% { opacity: 1; }
-  30% { opacity: 0.2; }
-  50% { opacity: 0.8; background-position: 100% 100%; }
-  70% { opacity: 0.1; }
-  85% { opacity: 0.9; }
+
+  0%,
+  100% {
+    opacity: 0.3;
+    background-position: 0% 0%;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  30% {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.8;
+    background-position: 100% 100%;
+  }
+
+  70% {
+    opacity: 0.1;
+  }
+
+  85% {
+    opacity: 0.9;
+  }
 }
 
 .xp-prismatic {
   background: linear-gradient(135deg,
-    hsla(0,100%,70%,0.3),
-    hsla(60,100%,70%,0.3),
-    hsla(120,100%,70%,0.3),
-    hsla(180,100%,70%,0.3),
-    hsla(240,100%,70%,0.3),
-    hsla(300,100%,70%,0.3),
-    hsla(360,100%,70%,0.3)
-  );
+      hsla(0, 100%, 70%, 0.6),
+      hsla(60, 100%, 70%, 0.6),
+      hsla(120, 100%, 70%, 0.6),
+      hsla(180, 100%, 70%, 0.6),
+      hsla(240, 100%, 70%, 0.6),
+      hsla(300, 100%, 70%, 0.6),
+      hsla(360, 100%, 70%, 0.6));
   background-size: 200% 200%;
   animation: prismatic-shift 4s ease-in-out infinite;
   mix-blend-mode: overlay;
 }
 
 @keyframes prismatic-shift {
-  0% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-  100% { background-position: 0% 0%; }
+  0% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+
+  100% {
+    background-position: 0% 0%;
+  }
 }
+
 </style>

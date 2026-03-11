@@ -15,6 +15,8 @@ const SHOP_ITEMS = {
   doubleCoins: { name: 'Double Coins', emoji: '💰', price: 35, max: 3, type: 'consumable', desc: '2× coins on next 5 completions' },
   decayDampener: { name: 'Decay Dampener', emoji: '🔻', price: 25, max: 1, type: 'consumable', desc: 'Halves all decay for 24h' },
   revivalElixir: { name: 'Revival Elixir', emoji: '💀', price: 75, max: 1, type: 'consumable', desc: 'Restores corrupted quest + 48h deadline' },
+  momentumSurge: { name: 'Momentum Surge', emoji: '📈', price: 60, max: 2, type: 'consumable', desc: 'Boosts streak multiplier for 24h' },
+  bossBane: { name: 'Boss Bane', emoji: '⚔️', price: 100, max: 3, type: 'consumable', desc: '+25% damage against next boss' },
   // Premium Themes
   themeCrimson: { name: 'Crimson Forge', emoji: '🔥', price: 150, type: 'cosmetic', category: 'theme', desc: 'Deep reds, ember particles' },
   themeAbyssal: { name: 'Abyssal', emoji: '🌊', price: 150, type: 'cosmetic', category: 'theme', desc: 'Dark ocean blues, bubble effects' },
@@ -33,6 +35,7 @@ const SHOP_ITEMS = {
   // XP Bar Styles
   xpGradient: { name: 'Gradient Pulse', emoji: '🌈', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Animated gradient' },
   xpLightning: { name: 'Lightning', emoji: '⚡', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Electric crackling' },
+  xpPrismatic: { name: 'Prismatic', emoji: '💎', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Rainbow shimmer' },
   xpPrismatic: { name: 'Prismatic', emoji: '💎', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Rainbow shimmer' },
 }
 
@@ -58,12 +61,14 @@ export const usePlayerStore = defineStore('player', () => {
   const coins = ref(0)
   const inventory = ref({
     entropyShield: 0, streakFreeze: 0, xpBoost: 0,
-    doubleCoins: 0, decayDampener: 0, revivalElixir: 0
+    doubleCoins: 0, decayDampener: 0, revivalElixir: 0,
+    momentumSurge: 0, bossBane: 0
   })
   const activeEffects = ref({
     xpBoost: 0,        // remaining quest completions with ×1.5
     doubleCoins: 0,    // remaining quest completions with 2× coins
-    dampenerExpires: null  // ISO timestamp when dampener wears off
+    dampenerExpires: null, // ISO timestamp when dampener wears off
+    momentumSurgeExpires: null // ISO timestamp when surge wears off
   })
   const ownedCosmetics = ref([])    // array of item IDs owned
   const selectedCosmetics = ref({
@@ -229,6 +234,10 @@ export const usePlayerStore = defineStore('player', () => {
 
     // If boss gate is active, XP goes toward slaying the boss
     if (isLevelCapped.value) {
+      if (inventory.value.bossBane > 0) {
+        amount = Math.round(amount * 1.25)
+        inventory.value.bossBane--
+      }
       bossXPEarned.value += amount
       updateStreak()
 
@@ -393,6 +402,12 @@ export const usePlayerStore = defineStore('player', () => {
     if (itemId === 'decayDampener' && inventory.value.decayDampener > 0) {
       inventory.value.decayDampener--
       activeEffects.value.dampenerExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      saveStats()
+      return true
+    }
+    if (itemId === 'momentumSurge' && inventory.value.momentumSurge > 0) {
+      inventory.value.momentumSurge--
+      activeEffects.value.momentumSurgeExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       saveStats()
       return true
     }

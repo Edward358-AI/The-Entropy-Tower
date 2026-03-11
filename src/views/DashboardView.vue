@@ -68,7 +68,7 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col p-4 desk:p-8 max-w-6xl mx-auto w-full">
+  <div class="min-h-screen flex flex-col p-4 desk:p-8 max-w-6xl mx-auto w-full relative">
     <!-- Header -->
     <header class="flex justify-between items-center mb-4 desk:mb-6">
       <div>
@@ -77,7 +77,7 @@ const handleLogout = async () => {
           <span>Streak: <span class="text-astral-glow font-bold">{{ playerStore.streak }} days</span></span>
           <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 14 ? '2.5' :
             playerStore.streak >= 7 ? '2.0' : playerStore.streak >= 5 ? '1.6' :
-            playerStore.streak >= 3 ? '1.3' : '1.0' }}</span>
+              playerStore.streak >= 3 ? '1.3' : '1.0' }}</span>
         </div>
       </div>
 
@@ -199,7 +199,7 @@ const handleLogout = async () => {
       </div>
 
       <!-- Center Panel: The Tower -->
-      <div class="col-span-4 flex flex-col justify-center">
+      <div class="col-span-4 flex flex-col">
         <TheTower layout="vertical" />
       </div>
 
@@ -219,7 +219,9 @@ const handleLogout = async () => {
               <span class="font-mono text-xl text-red-400">-{{ playerStore.totalXPLost }} XP</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-400 flex items-center gap-1"><Coins class="w-4 h-4 text-amber-400" /> Coins</span>
+              <span class="text-gray-400 flex items-center gap-1">
+                <Coins class="w-4 h-4 text-amber-400" /> Coins
+              </span>
               <span class="font-mono text-xl text-amber-400">{{ playerStore.coins }}</span>
             </div>
           </div>
@@ -240,7 +242,8 @@ const handleLogout = async () => {
         </div>
 
         <!-- Heatmap -->
-        <div v-if="rightPanelTab === 'history'" class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
+        <div v-if="rightPanelTab === 'history'" class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4"
+          :style="panelStyle">
           <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
           <Heatmap />
         </div>
