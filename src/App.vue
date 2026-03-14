@@ -97,7 +97,6 @@ const pageEffectClass = computed(() => {
 .stars-lg {
   position: absolute;
   inset: 0;
-  will-change: opacity;
 }
 
 /* Small stars — many, subtle, fast twinkle */
