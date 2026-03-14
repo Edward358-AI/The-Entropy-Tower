@@ -215,7 +215,9 @@ const handleLogout = async () => {
                   class="text-sm text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-400">Total Entropy</span>
+              <span class="text-gray-400 flex items-center gap-1">
+                <Flame class="w-4 h-4 text-red-500" /> Total Entropy
+              </span>
               <span class="font-mono text-xl text-red-400">-{{ playerStore.totalXPLost }} XP</span>
             </div>
             <div class="flex justify-between">
