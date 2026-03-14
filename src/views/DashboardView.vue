@@ -11,7 +11,7 @@ import Heatmap from '../components/Heatmap.vue'
 import BossGate from '../components/BossGate.vue'
 import ThemePicker from '../components/ThemePicker.vue'
 import CoinShop from '../components/CoinShop.vue'
-import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette, RefreshCw, Coins, ShoppingBag } from 'lucide-vue-next'
+import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette, RefreshCw, Coins, ShoppingBag, Flame } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const playerStore = usePlayerStore()
@@ -113,11 +113,15 @@ const handleLogout = async () => {
           </div>
           <div class="flex items-center gap-4">
             <span class="flex items-center gap-1 text-amber-400">
+              <span class="hidden sm:inline text-gray-400 text-sm mr-1">Coins</span>
               <Coins class="w-3.5 h-3.5" />
               <span class="font-mono text-lg font-bold">{{ playerStore.coins }}</span>
             </span>
-            <span class="text-gray-400 text-sm">Entropy</span>
-            <span class="font-mono text-lg text-red-400">-{{ playerStore.totalXPLost }}</span>
+            <span class="flex items-center gap-1 text-red-400">
+              <span class="hidden sm:inline text-gray-400 text-sm mr-1">Entropy</span>
+              <Flame class="w-3.5 h-3.5" />
+              <span class="font-mono text-lg">-{{ playerStore.totalXPLost }}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -128,28 +132,24 @@ const handleLogout = async () => {
       <!-- Tab Navigation -->
       <div class="flex bg-astral-nebula/30 border border-white/5 rounded-xl overflow-hidden" :style="panelStyle">
         <button @click="activeTab = 'add'"
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors"
+          class="flex-1 flex items-center justify-center gap-1.5 py-3 transition-colors"
           :class="activeTab === 'add' ? 'bg-astral-glow/20 text-astral-glow' : 'text-gray-500 hover:text-gray-300'">
-          <Plus class="w-3.5 h-3.5" />
-          Add
+          <Plus class="w-5 h-5" />
         </button>
         <button @click="activeTab = 'quests'"
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-x border-white/5"
+          class="flex-1 flex items-center justify-center gap-1.5 py-3 transition-colors border-x border-white/5"
           :class="activeTab === 'quests' ? 'bg-astral-glow/20 text-astral-glow' : 'text-gray-500 hover:text-gray-300'">
-          <Swords class="w-3.5 h-3.5" />
-          Quests
+          <Swords class="w-5 h-5" />
         </button>
         <button @click="activeTab = 'history'"
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-r border-white/5"
+          class="flex-1 flex items-center justify-center gap-1.5 py-3 transition-colors border-r border-white/5"
           :class="activeTab === 'history' ? 'bg-astral-glow/20 text-astral-glow' : 'text-gray-500 hover:text-gray-300'">
-          <CalendarDays class="w-3.5 h-3.5" />
-          History
+          <CalendarDays class="w-5 h-5" />
         </button>
         <button @click="activeTab = 'shop'"
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors"
+          class="flex-1 flex items-center justify-center gap-1.5 py-3 transition-colors"
           :class="activeTab === 'shop' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-500 hover:text-gray-300'">
-          <ShoppingBag class="w-3.5 h-3.5" />
-          Shop
+          <ShoppingBag class="w-5 h-5" />
         </button>
       </div>
 

@@ -1,9 +1,11 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
-import { Ghost, Swords } from 'lucide-vue-next'
+import { Ghost, Swords, Minimize2 } from 'lucide-vue-next'
 
 const playerStore = usePlayerStore()
+
+const isMinimized = ref(false)
 
 const bossHPPercent = computed(() => {
   const remaining = playerStore.bossXPRequired - playerStore.bossXPEarned
@@ -14,11 +16,27 @@ const damageDealt = computed(() => Math.min(playerStore.bossXPEarned, playerStor
 </script>
 
 <template>
-  <!-- Floating Widget instead of Blocking Modal -->
-  <div v-if="playerStore.isLevelCapped"
-    class="fixed z-40 bottom-24 left-1/2 -translate-x-1/2 desk:bottom-8 desk:left-auto desk:right-8 desk:translate-x-0 w-[90%] max-w-[340px] bg-astral-nebula border border-red-500/30 rounded-2xl p-6 text-center shadow-[0_0_40px_rgba(239,68,68,0.2)] overflow-hidden">
+  <div v-if="playerStore.isLevelCapped">
+    <!-- Minimized Widget -->
+    <button v-if="isMinimized" @click="isMinimized = false"
+      class="fixed z-40 bottom-24 right-4 desk:bottom-8 desk:right-8 flex items-center gap-2 bg-astral-nebula border border-red-500/50 rounded-full px-4 py-2 shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:bg-red-900/20 transition-colors">
+      <div class="absolute inset-0 bg-red-500/10 rounded-full animate-pulse-slow pointer-events-none"></div>
+      <Ghost class="w-5 h-5 text-red-500 animate-float" />
+      <span class="text-xs font-bold text-red-300">GATEKEEPER DETECTED ({{ Math.round(bossHPPercent) }}%)</span>
+    </button>
+
+    <!-- Expanded Widget -->
+    <div v-else
+      class="fixed z-40 bottom-24 left-1/2 -translate-x-1/2 desk:bottom-8 desk:left-auto desk:right-8 desk:translate-x-0 w-[90%] max-w-[340px] bg-astral-nebula border border-red-500/30 rounded-2xl p-6 text-center shadow-[0_0_40px_rgba(239,68,68,0.2)] overflow-hidden">
       <!-- Background Pulse -->
       <div class="absolute inset-0 bg-red-500/5 animate-pulse-slow pointer-events-none"></div>
+
+      <!-- Minimize Button -->
+      <button @click="isMinimized = true"
+        class="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-20"
+        title="Minimize Gatekeeper">
+        <Minimize2 class="w-4 h-4" />
+      </button>
 
       <div class="relative z-10">
         <Ghost class="w-10 h-10 text-red-500 mx-auto mb-3 animate-float" />
@@ -63,6 +81,7 @@ const damageDealt = computed(() => Math.min(playerStore.bossXPEarned, playerStor
         </p>
       </div>
     </div>
+  </div>
 </template>
 
 <style scoped>
