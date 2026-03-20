@@ -298,7 +298,7 @@ export const useQuestStore = defineStore('quest', () => {
     if (isNewDay) playerStore.lastDecayDate = today
 
     let totalPenalty = 0
-    const missedDates = {}
+    const missedCounts = {} // track raw counts first, convert to increment() later
 
     for (const quest of quests.value) {
       if (!quest.deadline) continue
@@ -321,9 +321,10 @@ export const useQuestStore = defineStore('quest', () => {
         
         totalPenalty += penalty
         
-        // Track TODAY as a missed date for heatmap (each overdue day counts as a miss)
+        // Accumulate missed count per date (NOT increment — we'll convert later)
         const dateStr = `${boundaryDate.getFullYear()}-${String(boundaryDate.getMonth() + 1).padStart(2, '0')}-${String(boundaryDate.getDate()).padStart(2, '0')}`
-        missedDates[`missed_${dateStr}`] = increment(1)
+        const key = `missed_${dateStr}`
+        missedCounts[key] = (missedCounts[key] || 0) + 1
       }
 
       if (daysUpdate >= 5) {
@@ -341,9 +342,14 @@ export const useQuestStore = defineStore('quest', () => {
       await playerStore.applyDecay(totalPenalty)
 
       // Log missed dates to heatmap history
-      if (auth.currentUser && Object.keys(missedDates).length > 0) {
+      if (auth.currentUser && Object.keys(missedCounts).length > 0) {
         try {
           const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
+          // Convert raw counts to Firestore increment() values
+          const missedDates = {}
+          for (const [key, count] of Object.entries(missedCounts)) {
+            missedDates[key] = increment(count)
+          }
           await withTimeout(setDoc(historyRef, missedDates, { merge: true }))
 
           // Signal heatmap to refresh
