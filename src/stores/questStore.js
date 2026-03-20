@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { db, auth } from '../services/firebase'
+import { db, auth, functions } from '../services/firebase'
+import { httpsCallable } from 'firebase/functions'
 import {
   collection, addDoc, query, where, getDocs, updateDoc, doc, serverTimestamp, deleteDoc, setDoc, getDoc, increment
 } from 'firebase/firestore'
@@ -39,8 +40,15 @@ export const useQuestStore = defineStore('quest', () => {
           return aTime - bTime
         })
 
-      // Check for decay on load (BEFORE refreshOverdueStatus so raw daysOverdue from Firestore is intact)
-      await checkDecay()
+      // Trigger server-side decay processing (Phase 1)
+      try {
+        const processMyDecay = httpsCallable(functions, 'processMyDecay')
+        await processMyDecay()
+      } catch (err) {
+        console.warn('Server decay not available, falling back to client-side:', err.message)
+        // Fallback to client-side decay until Cloud Functions are deployed
+        await checkDecay()
+      }
 
       // Mark overdue status based on exact deadline time (visual, every load)
       refreshOverdueStatus()

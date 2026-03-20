@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, connectFirestoreEmulator } from 'firebase/firestore'
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -23,5 +24,13 @@ const db = initializeFirestore(app, {
     tabManager: persistentSingleTabManager({})
   })
 })
+const functions = getFunctions(app)
 
-export { auth, db }
+// Connect to local emulators in dev mode
+if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
+  console.log('🔧 Connecting to Firebase emulators...')
+  connectFunctionsEmulator(functions, 'localhost', 5001)
+  connectFirestoreEmulator(db, 'localhost', 8080)
+}
+
+export { auth, db, functions }
