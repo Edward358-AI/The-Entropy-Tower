@@ -151,7 +151,7 @@ export const useQuestStore = defineStore('quest', () => {
         await playerStore.addXP(Math.round(reward))
 
         // Award coins
-        let coinReward = Math.ceil(quest.xpReward / 10)
+        let coinReward = Math.max(1, Math.ceil(quest.xpReward / 40))
         if (playerStore.streak >= 7) coinReward += 1 // streak bonus
         if (playerStore.activeEffects.doubleCoins > 0) {
           coinReward *= 2
