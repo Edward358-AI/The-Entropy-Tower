@@ -313,8 +313,8 @@ export const useQuestStore = defineStore('quest', () => {
       for (let day = oldDays + 1; day <= daysUpdate; day++) {
         const rawPenalty = getDecayPenalty(day)
         
-        // Exact midnight boundary when this specific day of decay ostensibly occurred
-        const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + day)
+        // The missed date is the deadline day + (day-1): day 1 overdue = deadline itself
+        const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + (day - 1))
         
         // Get the dampened amount if the dampener was active around this boundary date
         const penalty = playerStore.getDampenedAmount(rawPenalty, boundaryDate)
