@@ -354,7 +354,7 @@ const router = useRouter()
             <h3 class="text-white font-bold mb-1">💰 Earning Coins</h3>
             <p>Coins are a stable currency that never decays. You earn them from:</p>
             <ul class="list-disc list-inside ml-2 mt-1 space-y-0.5">
-              <li><span class="text-amber-400 font-bold">⌈XP/10⌉</span> coins per quest completed (~2-5 per quest)</li>
+              <li><span class="text-amber-400 font-bold">⌈XP/40⌉</span> coins per quest completed (~1 per quest)</li>
               <li><span class="text-amber-400 font-bold">+5</span> coins on every level up</li>
               <li><span class="text-amber-400 font-bold">+15</span> coins on boss gate clear (+5 from level = 20 total)</li>
               <li><span class="text-amber-400 font-bold">+1</span> bonus per quest at 7+ streak</li>
@@ -370,6 +370,8 @@ const router = useRouter()
               <li><span class="text-white font-bold">Double Coins</span> (35🪙, max 3) — 2× coins on next 5 completions</li>
               <li><span class="text-white font-bold">Decay Dampener</span> (25🪙, max 1) — halves all decay for 24 hours</li>
               <li><span class="text-white font-bold">Revival Elixir</span> (75🪙, max 1) — restores a corrupted quest with +48h deadline</li>
+              <li><span class="text-white font-bold">Momentum Surge</span> (60🪙, max 2) — boosts your streak multiplier to the next tier for 24h</li>
+              <li><span class="text-white font-bold">Boss Bane</span> (100🪙, max 3) — +25% damage against the current Gatekeeper boss</li>
             </ul>
           </div>
           <div>
