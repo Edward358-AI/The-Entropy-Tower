@@ -95,6 +95,11 @@ const saveEdit = async () => {
   await questStore.editQuest(editingId.value, updates)
   editingId.value = null
 }
+
+const areAllSubtasksComplete = (quest) => {
+  if (!quest.subtasks || quest.subtasks.length === 0) return true
+  return quest.subtasks.every(st => st.completed)
+}
 </script>
 
 <template>
@@ -114,15 +119,15 @@ const saveEdit = async () => {
         :class="getStatusColor(quest)"
         :style="getCardStyle(quest)">
         <!-- Normal View -->
-        <div v-if="editingId !== quest.id" class="flex justify-between items-start relative z-10">
-          <div class="flex-1">
-            <h3 class="font-bold text-white mb-1 flex items-center gap-2">
-              <ShieldAlert v-if="quest.status === 'corrupted'" class="w-4 h-4 text-red-500" />
-              <AlertTriangle v-else-if="quest.daysOverdue > 0" class="w-4 h-4 text-orange-400" />
-              {{ quest.title }}
+        <div v-if="editingId !== quest.id" class="flex justify-between items-start relative z-10 gap-2">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-white mb-1 flex items-start gap-2">
+              <ShieldAlert v-if="quest.status === 'corrupted'" class="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <AlertTriangle v-else-if="quest.daysOverdue > 0" class="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+              <span class="break-words min-w-0 flex-1">{{ quest.title }}</span>
             </h3>
 
-            <div class="flex items-center gap-3 text-xs text-gray-400">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
               <span class="text-astral-glow font-mono font-bold">+{{ quest.xpReward }} XP</span>
               <span v-if="quest.deadline">Due {{ getDeadlineText(quest.deadline) }}</span>
 
@@ -136,9 +141,24 @@ const saveEdit = async () => {
             <div v-if="quest.daysOverdue > 0" class="mt-2 text-xs text-red-400 font-bold">
               Rot Level: {{ quest.daysOverdue }} (Decay Active)
             </div>
+
+            <!-- Subtasks Checklist -->
+            <div v-if="quest.subtasks && quest.subtasks.length > 0" class="mt-3 space-y-1.5">
+              <label v-for="(subtask, index) in quest.subtasks" :key="index" 
+                class="flex items-start gap-2 cursor-pointer group">
+                <div class="relative flex items-center justify-center w-4 h-4 mt-0.5 border rounded-sm transition-colors shrink-0"
+                  :class="subtask.completed ? 'bg-astral-glow border-astral-glow' : 'border-gray-500 group-hover:border-astral-glow'">
+                  <Check v-if="subtask.completed" class="w-3 h-3 text-black" />
+                  <input type="checkbox" :checked="subtask.completed" @change="questStore.toggleSubtask(quest.id, index)" class="sr-only" />
+                </div>
+                <span class="text-sm transition-colors break-words min-w-0" :class="subtask.completed ? 'text-gray-500 line-through' : 'text-gray-300 group-hover:text-white'">
+                  {{ subtask.title }}
+                </span>
+              </label>
+            </div>
           </div>
 
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 shrink-0 self-start">
             <button @click.stop="startEdit(quest)" :disabled="quest.daysOverdue > 0"
               class="p-2 rounded-full transition-colors" :class="quest.daysOverdue > 0
                 ? 'text-gray-700 cursor-not-allowed opacity-20'
@@ -154,8 +174,10 @@ const saveEdit = async () => {
             </button>
 
             <button @click="questStore.completeQuest(quest.id)"
-              class="p-2 rounded-full bg-white/5 hover:bg-astral-glow hover:text-white text-gray-400 transition-colors"
-              title="Complete Quest">
+              :disabled="!areAllSubtasksComplete(quest)"
+              class="p-2 rounded-full transition-colors"
+              :class="areAllSubtasksComplete(quest) ? 'bg-white/5 hover:bg-astral-glow hover:text-white text-gray-400' : 'bg-white/5 text-gray-700 opacity-50 cursor-not-allowed'"
+              :title="!areAllSubtasksComplete(quest) ? 'Complete all subtasks first' : 'Complete Quest'">
               <CheckCircle class="w-6 h-6" />
             </button>
 

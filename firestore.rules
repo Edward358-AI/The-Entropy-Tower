@@ -4,9 +4,27 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      match /{document=**} {
+
+      // Quests: clients can read/write (addQuest, editQuest are client-side)
+      match /quests/{questId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Stats: read always. Write allowed for:
+      //   - Creating the initial document (resource == null)
+      //   - Updating ONLY cosmetic fields on an existing document
+      match /stats/{statId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['selectedTowerTheme', 'selectedPageTheme', 'selectedCosmetics', 'lastUpdated']);
+      }
+
+      // History (heatmap): read-only for clients
+      match /history/{historyId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false; // Only Cloud Functions write here
       }
     }
   }

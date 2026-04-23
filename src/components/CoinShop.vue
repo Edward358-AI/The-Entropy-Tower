@@ -40,16 +40,16 @@ const isSelected = (itemId) => {
   return playerStore.selectedCosmetics[item.category] === itemId
 }
 
-const handleBuy = (itemId) => {
-  const ok = playerStore.purchaseItem(itemId)
+const handleBuy = async (itemId) => {
+  const ok = await playerStore.purchaseItem(itemId)
   if (ok) {
     feedbackItem.value = itemId
     setTimeout(() => feedbackItem.value = null, 1200)
   }
 }
 
-const handleActivate = (itemId) => {
-  playerStore.activateItem(itemId)
+const handleActivate = async (itemId) => {
+  await playerStore.activateItem(itemId)
 }
 
 const handleSelect = (itemId) => {

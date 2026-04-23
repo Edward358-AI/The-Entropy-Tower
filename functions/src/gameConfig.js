@@ -135,10 +135,40 @@ const computeStreakFromHeatmap = (heatmapData) => {
   return streak
 }
 
+// Shop item definitions — single source of truth for prices, limits, and types
+const SHOP_ITEMS = {
+  // Consumables
+  entropyShield: { name: 'Entropy Shield', price: 50, max: 2, type: 'consumable' },
+  streakFreeze: { name: 'Streak Freeze', price: 40, max: 2, type: 'consumable' },
+  xpBoost: { name: 'XP Boost', price: 30, max: 3, type: 'consumable' },
+  doubleCoins: { name: 'Double Coins', price: 35, max: 3, type: 'consumable' },
+  decayDampener: { name: 'Decay Dampener', price: 25, max: 1, type: 'consumable' },
+  revivalElixir: { name: 'Revival Elixir', price: 75, max: 1, type: 'consumable' },
+  momentumSurge: { name: 'Momentum Surge', price: 60, max: 2, type: 'consumable' },
+  bossBane: { name: 'Boss Bane', price: 100, max: 3, type: 'consumable' },
+  // Cosmetics (themes, heatmap, cards, xp bar)
+  themeCrimson: { name: 'Crimson Forge', price: 150, type: 'cosmetic', category: 'theme' },
+  themeAbyssal: { name: 'Abyssal', price: 150, type: 'cosmetic', category: 'theme' },
+  themeNeon: { name: 'Neon Circuit', price: 200, type: 'cosmetic', category: 'theme' },
+  themeAurora: { name: 'Aurora', price: 200, type: 'cosmetic', category: 'theme' },
+  themeSolar: { name: 'Solar Flare', price: 150, type: 'cosmetic', category: 'theme' },
+  heatmapOcean: { name: 'Ocean', price: 60, type: 'cosmetic', category: 'heatmap' },
+  heatmapViolet: { name: 'Violet', price: 60, type: 'cosmetic', category: 'heatmap' },
+  heatmapEmber: { name: 'Ember', price: 60, type: 'cosmetic', category: 'heatmap' },
+  heatmapMono: { name: 'Monochrome', price: 60, type: 'cosmetic', category: 'heatmap' },
+  cardGilded: { name: 'Gilded', price: 80, type: 'cosmetic', category: 'cardStyle' },
+  cardPhantom: { name: 'Phantom', price: 80, type: 'cosmetic', category: 'cardStyle' },
+  cardRunic: { name: 'Runic', price: 80, type: 'cosmetic', category: 'cardStyle' },
+  xpGradient: { name: 'Gradient Pulse', price: 50, type: 'cosmetic', category: 'xpBar' },
+  xpLightning: { name: 'Lightning', price: 50, type: 'cosmetic', category: 'xpBar' },
+  xpPrismatic: { name: 'Prismatic', price: 50, type: 'cosmetic', category: 'xpBar' },
+}
+
 module.exports = {
   TIER_LIST,
   DECAY_RATES,
   STREAK_MULTIPLIERS,
+  SHOP_ITEMS,
   xpToNextLevel,
   bossXPRequired,
   tierIndexForLevel,

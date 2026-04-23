@@ -5,7 +5,7 @@ import { usePlayerStore } from '../stores/playerStore'
 import { breakDownGoal } from '../services/aiService'
 import { Timestamp } from 'firebase/firestore'
 import { addDays, format } from 'date-fns'
-import { Sparkles, PenTool, Plus } from 'lucide-vue-next'
+import { Sparkles, PenTool, Plus, X } from 'lucide-vue-next'
 
 const questStore = useQuestStore()
 const playerStore = usePlayerStore()
@@ -31,6 +31,20 @@ const manualTitle = ref('')
 const manualXP = ref(20)
 const manualDate = ref('')
 const manualTime = ref('23:59')
+const enableSubtasks = ref(false)
+const manualSubtasks = ref(['']) // Array of strings for subtask titles
+
+const addSubtask = () => {
+  manualSubtasks.value.push('')
+}
+
+const removeSubtask = (index) => {
+  manualSubtasks.value.splice(index, 1)
+  if (manualSubtasks.value.length === 0) {
+    enableSubtasks.value = false
+    manualSubtasks.value = ['']
+  }
+}
 
 // Set default date to tomorrow on mount
 onMounted(() => {
@@ -49,11 +63,18 @@ const handleAIBuild = async () => {
   try {
     const microQuests = await breakDownGoal(aiInput.value)
     for (const mq of microQuests) {
-      await questStore.addQuest({
+      const questData = {
         title: mq.title,
         xpReward: mq.xp,
         deadline: Timestamp.fromDate(addDays(new Date(), mq.deadlineOffset || 1)),
-      })
+      }
+      
+      // If AI returned subtasks, format them
+      if (mq.subtasks && Array.isArray(mq.subtasks) && mq.subtasks.length > 0) {
+        questData.subtasks = mq.subtasks.map(st => ({ title: st, completed: false }))
+      }
+
+      await questStore.addQuest(questData)
     }
     aiInput.value = ''
   } catch (err) {
@@ -70,11 +91,20 @@ const handleManualAdd = async () => {
   try {
     const selectedDate = new Date(manualDate.value + 'T' + manualTime.value + ':00')
 
-    await questStore.addQuest({
+    const questData = {
       title: manualTitle.value,
       xpReward: parseInt(manualXP.value) || 20,
       deadline: Timestamp.fromDate(selectedDate),
-    })
+    }
+
+    if (enableSubtasks.value) {
+      const validSubtasks = manualSubtasks.value.filter(st => st.trim() !== '')
+      if (validSubtasks.length > 0) {
+        questData.subtasks = validSubtasks.map(st => ({ title: st.trim(), completed: false }))
+      }
+    }
+
+    await questStore.addQuest(questData)
 
     // Reset form
     manualTitle.value = ''
@@ -82,6 +112,8 @@ const handleManualAdd = async () => {
     const tomorrow = addDays(new Date(), 1)
     manualDate.value = format(tomorrow, 'yyyy-MM-dd')
     manualTime.value = '23:59'
+    enableSubtasks.value = false
+    manualSubtasks.value = ['']
   } catch (err) {
     console.error(err)
     alert("Failed to create quest: " + err.message)
@@ -153,6 +185,30 @@ const handleManualAdd = async () => {
           <input v-model="manualTime" type="time"
             class="bg-black/20 border border-white/10 rounded-lg px-2 py-2 text-white text-sm focus:outline-none focus:border-astral-glow w-[90px] min-w-0" />
         </div>
+      </div>
+
+      <!-- Subtasks Toggle -->
+      <div class="flex items-center gap-2 mt-2">
+        <label class="flex items-center cursor-pointer relative">
+          <input type="checkbox" v-model="enableSubtasks" class="sr-only">
+          <div class="w-8 h-4 bg-white/10 rounded-full shadow-inner transition-colors" :class="{ 'bg-astral-glow': enableSubtasks }"></div>
+          <div class="dot absolute w-3 h-3 bg-white rounded-full top-0.5 left-0.5 transition-transform" :class="{ 'transform translate-x-4': enableSubtasks }"></div>
+        </label>
+        <span class="text-xs text-gray-400">Add Subtasks</span>
+      </div>
+
+      <!-- Subtasks List -->
+      <div v-if="enableSubtasks" class="space-y-2 mt-2 pl-2 border-l-2 border-white/10">
+        <div v-for="(subtask, index) in manualSubtasks" :key="index" class="flex items-center gap-2">
+          <input v-model="manualSubtasks[index]" type="text" :placeholder="`Subtask ${index + 1}`"
+            class="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-astral-glow transition-all" />
+          <button @click="removeSubtask(index)" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+        <button @click="addSubtask" class="text-xs text-astral-glow hover:text-astral-cosmic font-bold transition-colors">
+          + Add another subtask
+        </button>
       </div>
     </div>
   </div>

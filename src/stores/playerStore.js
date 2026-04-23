@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { db, auth } from '../services/firebase'
-import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore'
+import { db, auth, functions } from '../services/firebase'
+import { httpsCallable } from 'firebase/functions'
+import { doc, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 
 // All material tiers in order
 const TIER_LIST = ['Stone', 'Iron', 'Gold', 'Diamond', 'Astral', 'Void', 'Celestial', 'Ethereal', 'Mythic', 'Transcendent', 'Omega']
@@ -35,7 +36,6 @@ const SHOP_ITEMS = {
   // XP Bar Styles
   xpGradient: { name: 'Gradient Pulse', emoji: '🌈', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Animated gradient' },
   xpLightning: { name: 'Lightning', emoji: '⚡', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Electric crackling' },
-  xpPrismatic: { name: 'Prismatic', emoji: '💎', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Rainbow shimmer' },
   xpPrismatic: { name: 'Prismatic', emoji: '💎', price: 50, type: 'cosmetic', category: 'xpBar', desc: 'Rainbow shimmer' },
 }
 
@@ -82,6 +82,8 @@ export const usePlayerStore = defineStore('player', () => {
   let _resolveReady
   const statsReady = new Promise(resolve => { _resolveReady = resolve })
 
+  let unsubStats = null // onSnapshot unsubscribe handle
+
   // Timeout wrapper — prevents Firebase from hanging forever when offline
   const withTimeout = (promise, ms = 10000) => {
     return Promise.race([
@@ -93,13 +95,6 @@ export const usePlayerStore = defineStore('player', () => {
   // Helper: get today as YYYY-MM-DD in local time
   const getTodayStr = () => {
     const now = new Date()
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  }
-
-  // Helper: get yesterday as YYYY-MM-DD in local time
-  const getYesterdayStr = () => {
-    const now = new Date()
-    now.setDate(now.getDate() - 1)
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   }
 
@@ -148,210 +143,97 @@ export const usePlayerStore = defineStore('player', () => {
   // Boss HP scales linearly: 150 * bossNumber
   const bossXPRequired = computed(() => 150 * bossNumber.value)
 
-  // Sync with Firestore
+  /**
+   * Apply snapshot data to local reactive state.
+   */
+  const applyStatsData = (data) => {
+    level.value = data.level ?? 5
+    currentXP.value = data.currentXP ?? 50
+    streak.value = data.streak ?? 0
+    totalXPLost.value = data.totalXPLost ?? 0
+    isLevelCapped.value = data.isLevelCapped ?? false
+    bossXPEarned.value = data.bossXPEarned ?? 0
+    highestLevel.value = data.highestLevel ?? data.level ?? 5
+    selectedTowerTheme.value = data.selectedTowerTheme || null
+    selectedPageTheme.value = data.selectedPageTheme || null
+    lastActiveDate.value = data.lastActiveDate || null
+    lastDecayDate.value = data.lastDecayDate || null
+    coins.value = data.coins ?? 0
+    if (data.inventory) inventory.value = { ...inventory.value, ...data.inventory }
+    if (data.activeEffects) activeEffects.value = { ...activeEffects.value, ...data.activeEffects }
+    if (data.ownedCosmetics) ownedCosmetics.value = data.ownedCosmetics
+    if (data.selectedCosmetics) selectedCosmetics.value = { ...selectedCosmetics.value, ...data.selectedCosmetics }
+  }
+
+  /**
+   * Initialize stats via onSnapshot for real-time server updates.
+   * Creates initial stats document if it doesn't exist.
+   */
   const initStats = async () => {
     if (!auth.currentUser) return
     loading.value = true
-    try {
-      const userRef = doc(db, 'users', auth.currentUser.uid, 'stats', 'main')
-      const snap = await withTimeout(getDoc(userRef))
 
+    // Unsubscribe from any previous listener
+    if (unsubStats) {
+      unsubStats()
+      unsubStats = null
+    }
+
+    const userRef = doc(db, 'users', auth.currentUser.uid, 'stats', 'main')
+
+    // Set up real-time listener
+    unsubStats = onSnapshot(userRef, async (snap) => {
       if (snap.exists()) {
-        const data = snap.data()
-        level.value = data.level ?? 5
-        currentXP.value = data.currentXP ?? 50
-        streak.value = data.streak ?? 0
-        totalXPLost.value = data.totalXPLost ?? 0
-        isLevelCapped.value = data.isLevelCapped ?? false
-        bossXPEarned.value = data.bossXPEarned ?? 0
-        highestLevel.value = data.highestLevel ?? data.level ?? 5
-        selectedTowerTheme.value = data.selectedTowerTheme || null
-        selectedPageTheme.value = data.selectedPageTheme || null
-        lastActiveDate.value = data.lastActiveDate || null
-        lastDecayDate.value = data.lastDecayDate || null
-        coins.value = data.coins ?? 0
-        if (data.inventory) inventory.value = { ...inventory.value, ...data.inventory }
-        if (data.activeEffects) activeEffects.value = { ...activeEffects.value, ...data.activeEffects }
-        if (data.ownedCosmetics) ownedCosmetics.value = data.ownedCosmetics
-        if (data.selectedCosmetics) selectedCosmetics.value = { ...selectedCosmetics.value, ...data.selectedCosmetics }
+        applyStatsData(snap.data())
       } else {
-        // Create initial stats
-        await withTimeout(setDoc(userRef, {
-          level: 5,
-          currentXP: 50,
-          streak: 0,
-          totalXPLost: 0,
-          isLevelCapped: false,
-          bossXPEarned: 0,
-          highestLevel: 5,
-          selectedTowerTheme: null,
-          selectedPageTheme: null,
-          lastActiveDate: null,
-          lastDecayDate: null,
-          coins: 0,
-          inventory: inventory.value,
-          activeEffects: activeEffects.value,
-          ownedCosmetics: [],
-          selectedCosmetics: selectedCosmetics.value,
-          createdAt: serverTimestamp()
-        }))
+        // Create initial stats document
+        try {
+          await setDoc(userRef, {
+            level: 5,
+            currentXP: 50,
+            streak: 0,
+            totalXPLost: 0,
+            isLevelCapped: false,
+            bossXPEarned: 0,
+            highestLevel: 5,
+            selectedTowerTheme: null,
+            selectedPageTheme: null,
+            lastActiveDate: null,
+            lastDecayDate: null,
+            coins: 0,
+            inventory: inventory.value,
+            activeEffects: activeEffects.value,
+            ownedCosmetics: [],
+            selectedCosmetics: selectedCosmetics.value,
+            createdAt: serverTimestamp()
+          })
+        } catch (err) {
+          console.error('Failed to create initial stats:', err)
+        }
       }
-    } catch (err) {
-      console.error("Failed to init stats:", err)
-    } finally {
       loading.value = false
-      _resolveReady() // Unblock any pending saves
-    }
+      _resolveReady() // Unblock any pending operations
+    }, (err) => {
+      console.error('Stats snapshot error:', err)
+      loading.value = false
+      _resolveReady()
+    })
   }
 
-  // Fix #2: Update streak based on consecutive daily activity
-  const updateStreak = () => {
-    const today = getTodayStr()
-    const yesterday = getYesterdayStr()
-
-    if (lastActiveDate.value === today) {
-      // Already active today, no change
-      return
-    } else if (lastActiveDate.value === yesterday) {
-      // Consecutive day — streak continues
-      streak.value++
-    } else {
-      // Streak broken — reset to 1
-      streak.value = 1
-    }
-
-    lastActiveDate.value = today
-  }
-
-  const addXP = async (amount) => {
-    await statsReady // Wait for init to complete
-
-    // Apply XP Boost if active
-    if (activeEffects.value.xpBoost > 0) {
-      amount = Math.round(amount * 1.5)
-      activeEffects.value.xpBoost--
-    }
-
-    // If boss gate is active, XP goes toward slaying the boss
-    if (isLevelCapped.value) {
-      if (inventory.value.bossBane > 0) {
-        amount = Math.round(amount * 1.25)
-        inventory.value.bossBane--
-      }
-      bossXPEarned.value += amount
-      updateStreak()
-
-      // Check if boss is slain
-      if (bossXPEarned.value >= bossXPRequired.value) {
-        isLevelCapped.value = false
-        bossXPEarned.value = 0
-        currentXP.value = 0
-        level.value++
-        if (level.value > highestLevel.value) highestLevel.value = level.value
-        coins.value += 20 // 5 level-up + 15 boss clear
-      }
-
-      await saveStats()
-      return
-    }
-
-    currentXP.value += amount
-
-    // Update streak on any XP-earning activity
-    updateStreak()
-
-    // Check Level Up
-    while (currentXP.value >= xpToNextLevel.value) {
-      // Check for Boss Gate every 10 levels (9, 19, 29, 39...)
-      if ((level.value + 1) % 10 === 0) {
-        currentXP.value = xpToNextLevel.value // Cap at max
-        isLevelCapped.value = true
-        bossXPEarned.value = 0
-        break
-      }
-
-      currentXP.value -= xpToNextLevel.value
-      level.value++
-      if (level.value > highestLevel.value) highestLevel.value = level.value
-      coins.value += 5 // Level-up bonus
-    }
-
-    await saveStats()
-  }
-
-
-  // Get decay amount, optionally checking if a past date fell within active dampener window
-  const getDampenedAmount = (amount, decayDate = null) => {
-    if (!activeEffects.value.dampenerExpires) return amount
-    const exp = new Date(activeEffects.value.dampenerExpires)
-    const start = new Date(exp.getTime() - 24 * 60 * 60 * 1000)
-    
-    // If we have a specific past exact boundary date, check if it fell in the window
-    if (decayDate) {
-      if (decayDate >= start && decayDate <= exp) return Math.round(amount / 2)
-      return amount
-    }
-    
-    // Otherwise fallback to checking if active RIGHT NOW
-    if (new Date() < exp) return Math.round(amount / 2)
-    return amount
-  }
-
-  const applyDecay = async (amount) => {
-    await statsReady // Wait for init to complete
-
-    // Clear expired dampener if checking right now (dampener logic is handled before calling applyDecay)
-    if (activeEffects.value.dampenerExpires && new Date() >= new Date(activeEffects.value.dampenerExpires)) {
-      activeEffects.value.dampenerExpires = null
-    }
-
-    if (amount <= 0) return
-
-    currentXP.value -= amount
-    totalXPLost.value += amount
-
-    // De-leveling logic (Entropy wins)
-    while (currentXP.value < 0) {
-      // Entropy Shield: block de-level
-      if (inventory.value.entropyShield > 0) {
-        inventory.value.entropyShield--
-        currentXP.value = 0
-        break
-      }
-      if (level.value > 1) {
-        level.value--
-        currentXP.value += (100 + (level.value * 20))
-      } else {
-        currentXP.value = 0
-        break
-      }
-    }
-
-    await saveStats()
-  }
-
+  /**
+   * Save cosmetic preferences to Firestore.
+   * Only writes fields allowed by Firestore rules (cosmetic selections).
+   * All game-state writes (coins, XP, inventory, etc.) are handled by Cloud Functions.
+   */
   const saveStats = async () => {
-    await statsReady // Wait for init to complete
+    await statsReady
     if (!auth.currentUser) return
     isSyncing.value = true
     try {
       const userRef = doc(db, 'users', auth.currentUser.uid, 'stats', 'main')
       await withTimeout(updateDoc(userRef, {
-        level: level.value,
-        currentXP: currentXP.value,
-        streak: streak.value,
-        totalXPLost: totalXPLost.value,
-        isLevelCapped: isLevelCapped.value,
-        bossXPEarned: bossXPEarned.value,
-        highestLevel: highestLevel.value,
         selectedTowerTheme: selectedTowerTheme.value,
         selectedPageTheme: selectedPageTheme.value,
-        lastActiveDate: lastActiveDate.value,
-        lastDecayDate: lastDecayDate.value,
-        coins: coins.value,
-        inventory: inventory.value,
-        activeEffects: activeEffects.value,
-        ownedCosmetics: ownedCosmetics.value,
         selectedCosmetics: selectedCosmetics.value,
         lastUpdated: serverTimestamp()
       }))
@@ -362,56 +244,75 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-  // Add coins (called from questStore on completion)
-  const addCoins = (amount) => {
-    coins.value += amount
-  }
-
-  // Purchase an item from the shop
-  const purchaseItem = (itemId) => {
+  /**
+   * Purchase an item from the shop via server-side Cloud Function.
+   * Optimistic update with revert on failure.
+   */
+  const purchaseItem = async (itemId) => {
     const item = SHOP_ITEMS[itemId]
     if (!item || coins.value < item.price) return false
 
+    // Pre-validate client-side for instant feedback
+    if (item.type === 'consumable' && inventory.value[itemId] >= item.max) return false
+    if (item.type === 'cosmetic' && ownedCosmetics.value.includes(itemId)) return false
+
+    // Optimistic update
+    const prevCoins = coins.value
+    const prevInventory = { ...inventory.value }
+    const prevOwned = [...ownedCosmetics.value]
+
+    coins.value -= item.price
     if (item.type === 'consumable') {
-      if (inventory.value[itemId] >= item.max) return false
-      coins.value -= item.price
       inventory.value[itemId]++
     } else if (item.type === 'cosmetic') {
-      if (ownedCosmetics.value.includes(itemId)) return false
-      coins.value -= item.price
       ownedCosmetics.value.push(itemId)
     }
-    saveStats()
-    return true
+
+    try {
+      const purchaseItemFn = httpsCallable(functions, 'purchaseItem')
+      await purchaseItemFn({ itemId })
+      // onSnapshot will confirm the final state
+      return true
+    } catch (err) {
+      console.error('Failed to purchase item:', err)
+      // Revert optimistic update
+      coins.value = prevCoins
+      inventory.value = prevInventory
+      ownedCosmetics.value = prevOwned
+      return false
+    }
   }
 
-  // Activate a consumable item
-  const activateItem = (itemId) => {
-    if (itemId === 'xpBoost' && inventory.value.xpBoost > 0) {
-      inventory.value.xpBoost--
-      activeEffects.value.xpBoost += 3
-      saveStats()
+  /**
+   * Activate a consumable item via server-side Cloud Function.
+   * Optimistic update with revert on failure.
+   */
+  const activateItem = async (itemId) => {
+    // Pre-validate
+    if (!inventory.value[itemId] || inventory.value[itemId] <= 0) return false
+
+    // Optimistic update
+    const prevInventory = { ...inventory.value }
+    const prevEffects = { ...activeEffects.value }
+
+    inventory.value[itemId]--
+    if (itemId === 'xpBoost') activeEffects.value.xpBoost = (activeEffects.value.xpBoost || 0) + 3
+    else if (itemId === 'doubleCoins') activeEffects.value.doubleCoins = (activeEffects.value.doubleCoins || 0) + 5
+    else if (itemId === 'decayDampener') activeEffects.value.dampenerExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    else if (itemId === 'momentumSurge') activeEffects.value.momentumSurgeExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+    try {
+      const activateItemFn = httpsCallable(functions, 'activateItem')
+      await activateItemFn({ itemId })
+      // onSnapshot will confirm the final state
       return true
+    } catch (err) {
+      console.error('Failed to activate item:', err)
+      // Revert optimistic update
+      inventory.value = prevInventory
+      activeEffects.value = prevEffects
+      return false
     }
-    if (itemId === 'doubleCoins' && inventory.value.doubleCoins > 0) {
-      inventory.value.doubleCoins--
-      activeEffects.value.doubleCoins += 5
-      saveStats()
-      return true
-    }
-    if (itemId === 'decayDampener' && inventory.value.decayDampener > 0) {
-      inventory.value.decayDampener--
-      activeEffects.value.dampenerExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      saveStats()
-      return true
-    }
-    if (itemId === 'momentumSurge' && inventory.value.momentumSurge > 0) {
-      inventory.value.momentumSurge--
-      activeEffects.value.momentumSurgeExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      saveStats()
-      return true
-    }
-    return false
   }
 
   // Select a cosmetic
@@ -426,6 +327,16 @@ export const usePlayerStore = defineStore('player', () => {
       selectedCosmetics.value[cat] = itemId
     }
     saveStats()
+  }
+
+  /**
+   * Clean up onSnapshot listener when store is disposed.
+   */
+  const cleanup = () => {
+    if (unsubStats) {
+      unsubStats()
+      unsubStats = null
+    }
   }
 
   return {
@@ -458,13 +369,10 @@ export const usePlayerStore = defineStore('player', () => {
     selectedCosmetics,
     getTodayStr,
     initStats,
-    addXP,
-    addCoins,
-    applyDecay,
     saveStats,
     purchaseItem,
     activateItem,
     selectCosmetic,
-    getDampenedAmount
+    cleanup
   }
 })
