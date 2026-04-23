@@ -1,7 +1,7 @@
 /**
  * purchaseItem — Callable Cloud Function
  *
- * Server-validated shop purchases:
+ * Server-validated shop purchases using Firestore transaction:
  * 1. Validates item exists in SHOP_ITEMS
  * 2. Checks player has enough coins
  * 3. For consumables: checks inventory isn't maxed
@@ -21,55 +21,60 @@ async function handlePurchaseItem(db, userId, itemId) {
   }
 
   const statsRef = db.doc(`users/${userId}/stats/main`)
-  const statsSnap = await statsRef.get()
 
-  if (!statsSnap.exists) {
-    throw new Error('Player stats not found.')
-  }
+  const result = await db.runTransaction(async (t) => {
+    const statsSnap = await t.get(statsRef)
 
-  const stats = statsSnap.data()
-  const coins = stats.coins || 0
-
-  // Check sufficient coins
-  if (coins < item.price) {
-    throw new Error('Not enough coins.')
-  }
-
-  const statsUpdate = {
-    coins: coins - item.price,
-    lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
-  }
-
-  if (item.type === 'consumable') {
-    const inventory = { ...(stats.inventory || {}) }
-    const currentCount = inventory[itemId] || 0
-
-    if (currentCount >= item.max) {
-      throw new Error(`Already at max capacity for ${item.name}.`)
+    if (!statsSnap.exists) {
+      throw new Error('Player stats not found.')
     }
 
-    inventory[itemId] = currentCount + 1
-    statsUpdate.inventory = inventory
-  } else if (item.type === 'cosmetic') {
-    const ownedCosmetics = [...(stats.ownedCosmetics || [])]
+    const stats = statsSnap.data()
+    const coins = stats.coins || 0
 
-    if (ownedCosmetics.includes(itemId)) {
-      throw new Error(`Already owned: ${item.name}.`)
+    // Check sufficient coins
+    if (coins < item.price) {
+      throw new Error('Not enough coins.')
     }
 
-    ownedCosmetics.push(itemId)
-    statsUpdate.ownedCosmetics = ownedCosmetics
-  } else {
-    throw new Error(`Invalid item type: ${item.type}`)
-  }
+    const statsUpdate = {
+      coins: coins - item.price,
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+    }
 
-  await statsRef.update(statsUpdate)
+    if (item.type === 'consumable') {
+      const inventory = { ...(stats.inventory || {}) }
+      const currentCount = inventory[itemId] || 0
 
-  return {
-    success: true,
-    item: item.name,
-    coinsRemaining: coins - item.price,
-  }
+      if (currentCount >= item.max) {
+        throw new Error(`Already at max capacity for ${item.name}.`)
+      }
+
+      inventory[itemId] = currentCount + 1
+      statsUpdate.inventory = inventory
+    } else if (item.type === 'cosmetic') {
+      const ownedCosmetics = [...(stats.ownedCosmetics || [])]
+
+      if (ownedCosmetics.includes(itemId)) {
+        throw new Error(`Already owned: ${item.name}.`)
+      }
+
+      ownedCosmetics.push(itemId)
+      statsUpdate.ownedCosmetics = ownedCosmetics
+    } else {
+      throw new Error(`Invalid item type: ${item.type}`)
+    }
+
+    t.update(statsRef, statsUpdate)
+
+    return {
+      success: true,
+      item: item.name,
+      coinsRemaining: coins - item.price,
+    }
+  })
+
+  return result
 }
 
 module.exports = { handlePurchaseItem }

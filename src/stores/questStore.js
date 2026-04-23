@@ -12,6 +12,7 @@ export const useQuestStore = defineStore('quest', () => {
   const quests = ref([])
   const loading = ref(false)
   const heatmapVersion = ref(0) // Bumped after heatmap writes to trigger UI refresh
+  const processingIds = ref(new Set()) // Prevents double-clicks on the same quest
   const playerStore = usePlayerStore()
 
   let unsubQuests = null // onSnapshot unsubscribe handle
@@ -117,8 +118,10 @@ export const useQuestStore = defineStore('quest', () => {
    * Optimistic removal from UI; server handles all XP/coin/streak logic.
    */
   const completeQuest = async (questId) => {
+    if (processingIds.value.has(questId)) return // Already processing
     const questIndex = quests.value.findIndex(q => q.id === questId)
     if (questIndex === -1) return
+    processingIds.value.add(questId)
 
     // Optimistic Update: remove from list immediately
     const removedQuest = quests.value.splice(questIndex, 1)[0]
@@ -137,6 +140,7 @@ export const useQuestStore = defineStore('quest', () => {
       quests.value.splice(questIndex, 0, removedQuest)
       sortQuests(quests.value)
     } finally {
+      processingIds.value.delete(questId)
       playerStore.isSyncing = false
     }
   }
@@ -147,6 +151,8 @@ export const useQuestStore = defineStore('quest', () => {
    */
   const deleteQuest = async (questId) => {
     if (!auth.currentUser) return
+    if (processingIds.value.has(questId)) return // Already processing
+    processingIds.value.add(questId)
 
     const questIndex = quests.value.findIndex(q => q.id === questId)
     const removedQuest = questIndex !== -1 ? quests.value.splice(questIndex, 1)[0] : null
@@ -164,6 +170,7 @@ export const useQuestStore = defineStore('quest', () => {
         sortQuests(quests.value)
       }
     } finally {
+      processingIds.value.delete(questId)
       playerStore.isSyncing = false
     }
   }
@@ -199,9 +206,11 @@ export const useQuestStore = defineStore('quest', () => {
    */
   const reviveQuest = async (questId) => {
     if (!auth.currentUser) return false
+    if (processingIds.value.has(questId)) return false // Already processing
 
     const quest = quests.value.find(q => q.id === questId)
     if (!quest || quest.status !== 'corrupted') return false
+    processingIds.value.add(questId)
 
     // Optimistic update
     const originalStatus = quest.status
@@ -230,6 +239,7 @@ export const useQuestStore = defineStore('quest', () => {
       quest.deadline = originalDeadline
       return false
     } finally {
+      processingIds.value.delete(questId)
       playerStore.isSyncing = false
     }
   }
@@ -300,6 +310,7 @@ export const useQuestStore = defineStore('quest', () => {
     quests,
     loading,
     heatmapVersion,
+    processingIds,
     loadQuests,
     addQuest,
     completeQuest,

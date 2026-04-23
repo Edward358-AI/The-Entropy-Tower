@@ -1,7 +1,7 @@
 /**
  * activateItem — Callable Cloud Function
  *
- * Server-validated item activation:
+ * Server-validated item activation using Firestore transaction:
  * 1. Validates item is activatable
  * 2. Checks inventory has the item
  * 3. Decrements inventory count
@@ -44,45 +44,50 @@ async function handleActivateItem(db, userId, itemId) {
   }
 
   const statsRef = db.doc(`users/${userId}/stats/main`)
-  const statsSnap = await statsRef.get()
 
-  if (!statsSnap.exists) {
-    throw new Error('Player stats not found.')
-  }
+  const result = await db.runTransaction(async (t) => {
+    const statsSnap = await t.get(statsRef)
 
-  const stats = statsSnap.data()
-  const inventory = { ...(stats.inventory || {}) }
-  const activeEffects = { ...(stats.activeEffects || {}) }
+    if (!statsSnap.exists) {
+      throw new Error('Player stats not found.')
+    }
 
-  // Check inventory
-  if (!inventory[itemId] || inventory[itemId] <= 0) {
-    throw new Error(`No ${itemId} in inventory.`)
-  }
+    const stats = statsSnap.data()
+    const inventory = { ...(stats.inventory || {}) }
+    const activeEffects = { ...(stats.activeEffects || {}) }
 
-  // Decrement inventory
-  inventory[itemId]--
+    // Check inventory
+    if (!inventory[itemId] || inventory[itemId] <= 0) {
+      throw new Error(`No ${itemId} in inventory.`)
+    }
 
-  // Apply effect
-  let effectDescription = ''
-  if (activatable.mode === 'counter') {
-    activeEffects[activatable.effectKey] = (activeEffects[activatable.effectKey] || 0) + activatable.addCount
-    effectDescription = `+${activatable.addCount} uses`
-  } else if (activatable.mode === 'timer') {
-    activeEffects[activatable.effectKey] = new Date(Date.now() + activatable.durationMs).toISOString()
-    effectDescription = '24h timer started'
-  }
+    // Decrement inventory
+    inventory[itemId]--
 
-  await statsRef.update({
-    inventory,
-    activeEffects,
-    lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+    // Apply effect
+    let effectDescription = ''
+    if (activatable.mode === 'counter') {
+      activeEffects[activatable.effectKey] = (activeEffects[activatable.effectKey] || 0) + activatable.addCount
+      effectDescription = `+${activatable.addCount} uses`
+    } else if (activatable.mode === 'timer') {
+      activeEffects[activatable.effectKey] = new Date(Date.now() + activatable.durationMs).toISOString()
+      effectDescription = '24h timer started'
+    }
+
+    t.update(statsRef, {
+      inventory,
+      activeEffects,
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+    })
+
+    return {
+      success: true,
+      item: itemId,
+      effect: effectDescription,
+    }
   })
 
-  return {
-    success: true,
-    item: itemId,
-    effect: effectDescription,
-  }
+  return result
 }
 
 module.exports = { handleActivateItem }

@@ -77,6 +77,7 @@ export const usePlayerStore = defineStore('player', () => {
     cardStyle: null,   // quest card style ID or null
     xpBar: null        // XP bar style ID or null
   })
+  const processingItems = ref(new Set()) // Prevents double-clicks on shop actions
 
   // Initialization gate — prevents saves from overwriting real data
   let _resolveReady
@@ -249,12 +250,15 @@ export const usePlayerStore = defineStore('player', () => {
    * Optimistic update with revert on failure.
    */
   const purchaseItem = async (itemId) => {
+    if (processingItems.value.has(itemId)) return false // Already processing
     const item = SHOP_ITEMS[itemId]
     if (!item || coins.value < item.price) return false
 
     // Pre-validate client-side for instant feedback
     if (item.type === 'consumable' && inventory.value[itemId] >= item.max) return false
     if (item.type === 'cosmetic' && ownedCosmetics.value.includes(itemId)) return false
+
+    processingItems.value.add(itemId)
 
     // Optimistic update
     const prevCoins = coins.value
@@ -280,6 +284,8 @@ export const usePlayerStore = defineStore('player', () => {
       inventory.value = prevInventory
       ownedCosmetics.value = prevOwned
       return false
+    } finally {
+      processingItems.value.delete(itemId)
     }
   }
 
@@ -288,8 +294,11 @@ export const usePlayerStore = defineStore('player', () => {
    * Optimistic update with revert on failure.
    */
   const activateItem = async (itemId) => {
+    if (processingItems.value.has(itemId)) return false // Already processing
     // Pre-validate
     if (!inventory.value[itemId] || inventory.value[itemId] <= 0) return false
+
+    processingItems.value.add(itemId)
 
     // Optimistic update
     const prevInventory = { ...inventory.value }
@@ -312,6 +321,8 @@ export const usePlayerStore = defineStore('player', () => {
       inventory.value = prevInventory
       activeEffects.value = prevEffects
       return false
+    } finally {
+      processingItems.value.delete(itemId)
     }
   }
 
@@ -367,6 +378,7 @@ export const usePlayerStore = defineStore('player', () => {
     activeEffects,
     ownedCosmetics,
     selectedCosmetics,
+    processingItems,
     getTodayStr,
     initStats,
     saveStats,
