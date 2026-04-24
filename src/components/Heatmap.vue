@@ -1,13 +1,11 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { db, auth } from '../services/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, onSnapshot } from 'firebase/firestore'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isToday } from 'date-fns'
-import { useQuestStore } from '../stores/questStore'
 import { usePlayerStore } from '../stores/playerStore'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
-const questStore = useQuestStore()
 const playerStore = usePlayerStore()
 
 // Heatmap color schemes — each has good, bad, mixed + text + legend colors
@@ -71,6 +69,8 @@ const currentMonth = ref(new Date())
 const historyData = ref({})
 const selectedDay = ref(null) // For click-to-show tooltip on mobile
 
+let unsubHeatmap = null
+
 const monthLabel = computed(() => format(currentMonth.value, 'MMMM yyyy'))
 
 const canGoForward = computed(() => {
@@ -97,20 +97,23 @@ const toggleDay = (day) => {
   selectedDay.value = selectedDay.value === day.dateStr ? null : day.dateStr
 }
 
-const fetchHistory = async () => {
+const startListening = () => {
   if (!auth.currentUser) return
 
-  try {
-    const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
-    const snap = await getDoc(historyRef)
+  if (unsubHeatmap) {
+    unsubHeatmap()
+    unsubHeatmap = null
+  }
+
+  const historyRef = doc(db, 'users', auth.currentUser.uid, 'history', 'heatmap')
+  unsubHeatmap = onSnapshot(historyRef, (snap) => {
     if (snap.exists()) {
       historyData.value = snap.data()
     }
-  } catch (err) {
-    console.error("Failed to load heatmap:", err)
-  }
-
-  buildGrid()
+    buildGrid()
+  }, (err) => {
+    console.error("Heatmap snapshot error:", err)
+  })
 }
 
 const buildGrid = () => {
@@ -152,12 +155,14 @@ const buildGrid = () => {
 }
 
 onMounted(() => {
-  fetchHistory()
+  startListening()
 })
 
-// Live update after heatmap data is written
-watch(() => questStore.heatmapVersion, () => {
-  fetchHistory()
+onUnmounted(() => {
+  if (unsubHeatmap) {
+    unsubHeatmap()
+    unsubHeatmap = null
+  }
 })
 
 const getColor = (day) => {

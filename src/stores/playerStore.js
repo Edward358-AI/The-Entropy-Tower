@@ -185,6 +185,12 @@ export const usePlayerStore = defineStore('player', () => {
     // Set up real-time listener
     unsubStats = onSnapshot(userRef, async (snap) => {
       if (snap.exists()) {
+        // Skip stale cached snapshots while an optimistic update is in-flight.
+        // This prevents the UI from "flashing back" to old values before the server confirms.
+        // But allow snapshots that reflect our own pending writes (hasPendingWrites).
+        if (isSyncing.value && snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
+          return
+        }
         applyStatsData(snap.data())
       } else {
         // Create initial stats document

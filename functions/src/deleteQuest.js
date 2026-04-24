@@ -17,11 +17,13 @@ const {
   getDecayPenalty,
   applyDecayToStats,
   isDampenerActive,
+  formatDateStr,
 } = require('./gameConfig')
 
 async function handleDeleteQuest(db, userId, questId) {
   const questRef = db.doc(`users/${userId}/quests/${questId}`)
   const statsRef = db.doc(`users/${userId}/stats/main`)
+  const heatmapRef = db.doc(`users/${userId}/history/heatmap`)
 
   const result = await db.runTransaction(async (t) => {
     const [questSnap, statsSnap] = await Promise.all([
@@ -89,6 +91,14 @@ async function handleDeleteQuest(db, userId, questId) {
 
     // Delete the quest
     t.delete(questRef)
+
+    // Write missed entry to heatmap if quest was overdue
+    if (quest.daysOverdue > 0) {
+      const todayStr = formatDateStr(new Date())
+      t.set(heatmapRef, {
+        [`missed_${todayStr}`]: admin.firestore.FieldValue.increment(1),
+      }, { merge: true })
+    }
 
     return { success: true, penaltyApplied }
   })

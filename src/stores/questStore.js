@@ -11,7 +11,6 @@ import { usePlayerStore } from './playerStore'
 export const useQuestStore = defineStore('quest', () => {
   const quests = ref([])
   const loading = ref(false)
-  const heatmapVersion = ref(0) // Bumped after heatmap writes to trigger UI refresh
   const processingIds = ref(new Set()) // Prevents double-clicks on the same quest
   const playerStore = usePlayerStore()
 
@@ -54,11 +53,17 @@ export const useQuestStore = defineStore('quest', () => {
 
     // Set up real-time listener
     unsubQuests = onSnapshot(q, (snap) => {
+      // Skip stale cached snapshots while an optimistic update is in-flight.
+      // Allow snapshots that reflect our own pending writes.
+      if (playerStore.isSyncing && snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
+        return
+      }
+
       quests.value = sortQuests(
         snap.docs.map(d => ({ id: d.id, ...d.data() }))
       )
 
-      // Mark overdue status for instant visual feedback
+      // Visual-only: fill in overdue data for quests the server hasn't processed yet
       refreshOverdueStatus()
 
       loading.value = false
@@ -131,9 +136,6 @@ export const useQuestStore = defineStore('quest', () => {
       const completeQuestFn = httpsCallable(functions, 'completeQuest')
       await completeQuestFn({ questId })
       // Server updates stats & heatmap; onSnapshot listeners will refresh UI
-
-      // Signal heatmap to refresh
-      heatmapVersion.value++
     } catch (err) {
       console.error("Failed to complete quest:", err)
       // Revert optimistic removal
@@ -278,21 +280,21 @@ export const useQuestStore = defineStore('quest', () => {
   }
 
   /**
-   * Mark quests overdue based on exact deadline time.
-   * Visual-only — runs on each snapshot for instant UI feedback.
-   * Server is the authority for actual penalty calculations.
+   * Visual-only overdue marker.
+   * If the server hasn't processed decay yet (daysOverdue is still 0 in Firestore),
+   * this fills in the visual overdue state so the user sees immediate feedback.
+   * It does NOT override server values — only fills gaps.
    */
   const refreshOverdueStatus = () => {
     const now = new Date()
     for (const quest of quests.value) {
       if (!quest.deadline) continue
       const deadline = new Date(quest.deadline.seconds * 1000)
-      if (now > deadline) {
+      if (now > deadline && (!quest.daysOverdue || quest.daysOverdue === 0)) {
+        // Server hasn't processed this yet — show visual overdue indicator
         quest.daysOverdue = Math.max(1, differenceInCalendarDays(now, deadline))
-        if (quest.daysOverdue >= 5) quest.status = 'corrupted'
-      } else {
-        quest.daysOverdue = 0
       }
+      // Never override server-set daysOverdue or status — trust the server
     }
   }
 
@@ -309,7 +311,6 @@ export const useQuestStore = defineStore('quest', () => {
   return {
     quests,
     loading,
-    heatmapVersion,
     processingIds,
     loadQuests,
     addQuest,
