@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { usePlayerStore } from '../stores/playerStore'
 import { useQuestStore } from '../stores/questStore'
+import { useTime } from '../composables/useTime'
 import { useRouter } from 'vue-router'
 import TheTower from '../components/TheTower.vue'
 import QuestFeed from '../components/QuestFeed.vue'
@@ -17,6 +18,7 @@ const authStore = useAuthStore()
 const playerStore = usePlayerStore()
 const questStore = useQuestStore()
 const router = useRouter()
+const { onDayChange } = useTime()
 
 // Card cosmetic styles for app-wide panels
 const PANEL_STYLES = {
@@ -59,6 +61,11 @@ const handleRefresh = async () => {
 
 onMounted(() => {
   playerStore.initStats()
+})
+
+// Midnight rollover: hard refresh when the date changes locally
+onDayChange(() => {
+  questStore.handleMidnightRollover()
 })
 
 const handleLogout = async () => {

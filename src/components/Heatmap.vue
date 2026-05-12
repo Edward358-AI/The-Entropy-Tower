@@ -1,12 +1,14 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { db, auth } from '../services/firebase'
 import { doc, onSnapshot } from 'firebase/firestore'
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isToday } from 'date-fns'
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns'
 import { usePlayerStore } from '../stores/playerStore'
+import { useTime } from '../composables/useTime'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const playerStore = usePlayerStore()
+const { now, onDayChange } = useTime()
 
 // Heatmap color schemes — each has good, bad, mixed + text + legend colors
 const HEATMAP_SCHEMES = {
@@ -74,8 +76,7 @@ let unsubHeatmap = null
 const monthLabel = computed(() => format(currentMonth.value, 'MMMM yyyy'))
 
 const canGoForward = computed(() => {
-  const now = new Date()
-  return currentMonth.value.getMonth() < now.getMonth() || currentMonth.value.getFullYear() < now.getFullYear()
+  return currentMonth.value.getMonth() < now.value.getMonth() || currentMonth.value.getFullYear() < now.value.getFullYear()
 })
 
 const prevMonth = () => {
@@ -145,7 +146,7 @@ const buildGrid = () => {
       missed,
       status,
       inMonth,
-      isToday: isToday(day)
+      isToday: isSameDay(day, now.value)
     })
 
     day = addDays(day, 1)
@@ -156,6 +157,11 @@ const buildGrid = () => {
 
 onMounted(() => {
   startListening()
+})
+
+// Rebuild grid at midnight so the 'today' ring moves to the new day
+onDayChange(() => {
+  buildGrid()
 })
 
 onUnmounted(() => {

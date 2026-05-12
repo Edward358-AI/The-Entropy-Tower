@@ -5,9 +5,11 @@ import { formatDistanceToNow, format } from 'date-fns'
 import { Timestamp } from 'firebase/firestore'
 import { CheckCircle, AlertTriangle, ShieldAlert, Trash2, Loader2, Pencil, X, Check, Skull } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/playerStore'
+import { useTime } from '../composables/useTime'
 
 const questStore = useQuestStore()
 const playerStore = usePlayerStore()
+const { now } = useTime()
 
 // Edit state
 const editingId = ref(null)
@@ -22,6 +24,8 @@ onMounted(() => {
 
 const getDeadlineText = (timestamp) => {
   if (!timestamp) return ''
+  // Touch now.value so Vue re-evaluates this when the clock ticks
+  const _tick = now.value
   const date = new Date(timestamp.seconds * 1000)
   return formatDistanceToNow(date, { addSuffix: true })
 }

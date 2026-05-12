@@ -3,9 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useQuestStore } from '../stores/questStore'
 import { usePlayerStore } from '../stores/playerStore'
 import { breakDownGoal, breakDownProject } from '../services/aiService'
+import { useTime } from '../composables/useTime'
 import { Timestamp } from 'firebase/firestore'
 import { addDays, differenceInCalendarDays, format } from 'date-fns'
 import { Sparkles, PenTool, Plus, X, FolderKanban, Upload, FileText, Image, Trash2 } from 'lucide-vue-next'
+
+const { now, todayStr } = useTime()
 
 const questStore = useQuestStore()
 const playerStore = usePlayerStore()
@@ -67,7 +70,7 @@ const MAX_FILES = 5
 const projectDaysRemaining = computed(() => {
   if (!projectDeadline.value) return 0
   const deadline = new Date(projectDeadline.value + 'T23:59:00')
-  const days = differenceInCalendarDays(deadline, new Date())
+  const days = differenceInCalendarDays(deadline, now.value)
   return Math.max(1, days)
 })
 
@@ -126,6 +129,8 @@ onMounted(() => {
   const weekOut = addDays(new Date(), 7)
   projectDeadline.value = format(weekOut, 'yyyy-MM-dd')
 })
+
+// todayDateString is now provided by useTime() as todayStr — reactive and auto-updates at midnight
 
 const isValidManual = computed(() => {
   return manualTitle.value.trim().length > 0 && manualDate.value
@@ -290,7 +295,7 @@ const handleProjectBuild = async () => {
       <div class="flex items-end gap-3">
         <div class="flex-1">
           <label class="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Final Deadline</label>
-          <input v-model="projectDeadline" type="date"
+          <input v-model="projectDeadline" type="date" :min="todayStr"
             class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-400/50 transition-colors" />
         </div>
         <div v-if="projectDeadline" class="text-xs text-purple-400 font-bold pb-2.5 whitespace-nowrap">
@@ -365,7 +370,7 @@ const handleProjectBuild = async () => {
 
         <!-- Date & Time Row -->
         <div class="flex gap-2 min-w-0">
-          <input v-model="manualDate" type="date"
+          <input v-model="manualDate" type="date" :min="todayStr"
             class="bg-black/20 border border-white/10 rounded-lg px-2 py-2 text-white text-sm focus:outline-none focus:border-astral-glow flex-1 min-w-0" />
           <input v-model="manualTime" type="time"
             class="bg-black/20 border border-white/10 rounded-lg px-2 py-2 text-white text-sm focus:outline-none focus:border-astral-glow w-[90px] min-w-0" />

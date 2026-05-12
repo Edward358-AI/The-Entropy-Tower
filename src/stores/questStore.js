@@ -315,6 +315,30 @@ export const useQuestStore = defineStore('quest', () => {
   }
 
   /**
+   * Handle local midnight rollover.
+   * Called by the reactive time layer when the date changes.
+   * 1. Immediately re-runs visual overdue checks
+   * 2. Triggers server-side decay so the server processes the new day
+   */
+  const handleMidnightRollover = async () => {
+    console.log('[questStore] Midnight rollover detected — refreshing...')
+
+    // Instant visual feedback: mark newly overdue quests
+    refreshOverdueStatus()
+
+    // Hard server refresh: trigger decay processing for the new day
+    if (auth.currentUser) {
+      try {
+        const processMyDecay = httpsCallable(functions, 'processMyDecay')
+        await processMyDecay()
+        console.log('[questStore] Server decay triggered successfully at midnight.')
+      } catch (err) {
+        console.warn('[questStore] Midnight server decay failed:', err.message)
+      }
+    }
+  }
+
+  /**
    * Clean up onSnapshot listener when store is disposed.
    */
   const cleanup = () => {
@@ -335,6 +359,7 @@ export const useQuestStore = defineStore('quest', () => {
     editQuest,
     reviveQuest,
     toggleSubtask,
+    handleMidnightRollover,
     cleanup
   }
 })
