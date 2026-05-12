@@ -2,14 +2,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuestStore } from '../stores/questStore'
 import { usePlayerStore } from '../stores/playerStore'
-import { breakDownGoal } from '../services/aiService'
+import { breakDownGoal, breakDownProject } from '../services/aiService'
 import { Timestamp } from 'firebase/firestore'
-import { addDays, format } from 'date-fns'
-import { Sparkles, PenTool, Plus, X } from 'lucide-vue-next'
+import { addDays, differenceInCalendarDays, format } from 'date-fns'
+import { Sparkles, PenTool, Plus, X, FolderKanban, Upload, FileText, Image, Trash2 } from 'lucide-vue-next'
 
 const questStore = useQuestStore()
 const playerStore = usePlayerStore()
-const mode = ref('ai') // 'ai' | 'manual'
+const mode = ref('ai') // 'ai' | 'manual' | 'project'
 
 // Card cosmetic styles for the panel
 const PANEL_STYLES = {
@@ -46,10 +46,85 @@ const removeSubtask = (index) => {
   }
 }
 
+// Project Planner Data
+const projectDesc = ref('')
+const projectDeadline = ref('')
+const projectFiles = ref([])
+const projectFileInput = ref(null)
+const isDragging = ref(false)
+
+const ACCEPTED_FILE_TYPES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'text/plain',
+]
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILES = 5
+
+const projectDaysRemaining = computed(() => {
+  if (!projectDeadline.value) return 0
+  const deadline = new Date(projectDeadline.value + 'T23:59:00')
+  const days = differenceInCalendarDays(deadline, new Date())
+  return Math.max(1, days)
+})
+
+const isValidProject = computed(() => {
+  return projectDesc.value.trim().length > 0 && projectDeadline.value && projectDaysRemaining.value > 0
+})
+
+const handleFileDrop = (e) => {
+  isDragging.value = false
+  const droppedFiles = Array.from(e.dataTransfer.files)
+  addFiles(droppedFiles)
+}
+
+const handleFileSelect = (e) => {
+  const selected = Array.from(e.target.files)
+  addFiles(selected)
+  // Reset input so same file can be re-selected
+  if (projectFileInput.value) projectFileInput.value.value = ''
+}
+
+const addFiles = (newFiles) => {
+  for (const file of newFiles) {
+    if (projectFiles.value.length >= MAX_FILES) break
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      alert(`Unsupported file type: ${file.type}\nAccepted: PDF, PNG, JPG, WebP, GIF, TXT`)
+      continue
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      alert(`File too large: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`)
+      continue
+    }
+    projectFiles.value.push(file)
+  }
+}
+
+const removeFile = (index) => {
+  projectFiles.value.splice(index, 1)
+}
+
+const getFileIcon = (file) => {
+  if (file.type.startsWith('image/')) return 'image'
+  return 'file'
+}
+
+const formatFileSize = (bytes) => {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
 // Set default date to tomorrow on mount
 onMounted(() => {
   const tomorrow = addDays(new Date(), 1)
   manualDate.value = format(tomorrow, 'yyyy-MM-dd')
+  // Default project deadline to 7 days from now
+  const weekOut = addDays(new Date(), 7)
+  projectDeadline.value = format(weekOut, 'yyyy-MM-dd')
 })
 
 const isValidManual = computed(() => {
@@ -119,6 +194,44 @@ const handleManualAdd = async () => {
     alert("Failed to create quest: " + err.message)
   }
 }
+
+const handleProjectBuild = async () => {
+  if (!isValidProject.value) return
+
+  isProcessing.value = true
+  try {
+    const quests = await breakDownProject(
+      projectDesc.value,
+      projectDaysRemaining.value,
+      projectFiles.value
+    )
+
+    for (const mq of quests) {
+      const questData = {
+        title: mq.title,
+        xpReward: mq.xp,
+        deadline: Timestamp.fromDate(addDays(new Date(), mq.deadlineOffset || 1)),
+      }
+
+      if (mq.subtasks && Array.isArray(mq.subtasks) && mq.subtasks.length > 0) {
+        questData.subtasks = mq.subtasks.map(st => ({ title: st, completed: false }))
+      }
+
+      await questStore.addQuest(questData)
+    }
+
+    // Reset form
+    projectDesc.value = ''
+    projectFiles.value = []
+    const weekOut = addDays(new Date(), 7)
+    projectDeadline.value = format(weekOut, 'yyyy-MM-dd')
+  } catch (err) {
+    console.error(err)
+    alert("Project planning failed. Try again.")
+  } finally {
+    isProcessing.value = false
+  }
+}
 </script>
 
 <template>
@@ -132,10 +245,17 @@ const handleManualAdd = async () => {
         <div v-if="mode === 'ai'" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-astral-glow"></div>
       </button>
 
+      <button @click="mode = 'project'" class="flex items-center gap-2 text-sm font-bold pb-2 transition-colors relative"
+        :class="mode === 'project' ? 'text-purple-400' : 'text-gray-500 hover:text-white'">
+        <FolderKanban class="w-4 h-4" />
+        Project
+        <div v-if="mode === 'project'" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-purple-400"></div>
+      </button>
+
       <button @click="mode = 'manual'" class="flex items-center gap-2 text-sm font-bold pb-2 transition-colors relative"
         :class="mode === 'manual' ? 'text-astral-glow' : 'text-gray-500 hover:text-white'">
         <PenTool class="w-4 h-4" />
-        Manual Override
+        Manual
         <div v-if="mode === 'manual'" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-astral-glow"></div>
       </button>
     </div>
@@ -154,6 +274,71 @@ const handleManualAdd = async () => {
           :disabled="isProcessing">
           <Sparkles class="w-4 h-4" />
           {{ isProcessing ? 'Constructing...' : 'Generate Quests' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Project Planner Mode -->
+    <div v-else-if="mode === 'project'" class="space-y-3">
+      <!-- Description -->
+      <textarea v-model="projectDesc" @keydown.ctrl.enter="handleProjectBuild"
+        placeholder="Describe your project in detail — what's the deliverable, any specific requirements, grading criteria, constraints, etc. The more detail you give, the better the timeline."
+        class="w-full h-28 bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-400/50 transition-all placeholder-gray-600 resize-none text-sm"
+        :disabled="isProcessing"></textarea>
+
+      <!-- Deadline & Info Row -->
+      <div class="flex items-end gap-3">
+        <div class="flex-1">
+          <label class="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Final Deadline</label>
+          <input v-model="projectDeadline" type="date"
+            class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-400/50 transition-colors" />
+        </div>
+        <div v-if="projectDeadline" class="text-xs text-purple-400 font-bold pb-2.5 whitespace-nowrap">
+          {{ projectDaysRemaining }} day{{ projectDaysRemaining !== 1 ? 's' : '' }} left
+        </div>
+      </div>
+
+      <!-- File Drop Zone -->
+      <div
+        @dragover.prevent="isDragging = true"
+        @dragleave.prevent="isDragging = false"
+        @drop.prevent="handleFileDrop"
+        @click="projectFileInput?.click()"
+        class="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all"
+        :class="isDragging
+          ? 'border-purple-400 bg-purple-500/10'
+          : 'border-white/10 hover:border-purple-400/30 hover:bg-white/[0.02]'"
+      >
+        <input ref="projectFileInput" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt" class="hidden" @change="handleFileSelect" />
+        <Upload class="w-5 h-5 mx-auto mb-1.5" :class="isDragging ? 'text-purple-400' : 'text-gray-600'" />
+        <p class="text-xs text-gray-500">
+          <span class="text-gray-400 font-medium">Drop files</span> or click to upload
+        </p>
+        <p class="text-[10px] text-gray-600 mt-0.5">PDF, images, or text — syllabus, rubric, instructions (max 10MB each)</p>
+      </div>
+
+      <!-- Attached Files List -->
+      <div v-if="projectFiles.length > 0" class="space-y-1.5">
+        <div v-for="(file, index) in projectFiles" :key="index"
+          class="flex items-center gap-2 bg-white/[0.03] border border-white/5 rounded-lg px-3 py-1.5 text-sm">
+          <FileText v-if="getFileIcon(file) === 'file'" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+          <Image v-else class="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+          <span class="text-gray-300 text-xs truncate flex-1">{{ file.name }}</span>
+          <span class="text-[10px] text-gray-600">{{ formatFileSize(file.size) }}</span>
+          <button @click.stop="removeFile(index)" class="p-0.5 text-gray-600 hover:text-red-400 transition-colors">
+            <X class="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Generate Button -->
+      <div class="flex justify-between items-center pt-1">
+        <p class="text-xs text-gray-500">Ctrl + Enter to submit</p>
+        <button @click="handleProjectBuild"
+          class="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white px-6 py-2 rounded-lg transition-colors font-medium border border-purple-400/20 flex items-center gap-2"
+          :disabled="isProcessing || !isValidProject">
+          <FolderKanban class="w-4 h-4" />
+          {{ isProcessing ? 'Planning...' : 'Build Timeline' }}
         </button>
       </div>
     </div>

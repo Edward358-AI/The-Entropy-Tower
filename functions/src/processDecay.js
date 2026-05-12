@@ -119,7 +119,7 @@ async function processUserDecay(db, userId, now, todayStr) {
       let rawPenalty = getDecayPenalty(day, stats.level)
 
       // Check if dampener was active for this decay boundary
-      const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + day)
+      const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + (day - 1))
       if (isDampenerActive(stats.activeEffects?.dampenerExpires, boundaryDate)) {
         rawPenalty = Math.round(rawPenalty / 2)
       }

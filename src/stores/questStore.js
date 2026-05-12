@@ -131,16 +131,32 @@ export const useQuestStore = defineStore('quest', () => {
     // Optimistic Update: remove from list immediately
     const removedQuest = quests.value.splice(questIndex, 1)[0]
 
+    // Optimistic XP/coin prediction for instant UI feedback
+    const prevXP = playerStore.currentXP
+    const prevCoins = playerStore.coins
+    const prevStreak = playerStore.streak
+    const prevLevel = playerStore.level
+
+    const estimatedXP = removedQuest.xpReward || 0
+    const estimatedCoins = Math.max(1, Math.ceil((removedQuest.xpReward || 0) / 40))
+    playerStore.currentXP += estimatedXP
+    playerStore.coins += estimatedCoins
+    if (playerStore.streak === 0) playerStore.streak = 1
+
     playerStore.isSyncing = true
     try {
       const completeQuestFn = httpsCallable(functions, 'completeQuest')
       await completeQuestFn({ questId })
-      // Server updates stats & heatmap; onSnapshot listeners will refresh UI
+      // onSnapshot will confirm with the server's authoritative values
     } catch (err) {
       console.error("Failed to complete quest:", err)
-      // Revert optimistic removal
+      // Revert all optimistic updates
       quests.value.splice(questIndex, 0, removedQuest)
       sortQuests(quests.value)
+      playerStore.currentXP = prevXP
+      playerStore.coins = prevCoins
+      playerStore.streak = prevStreak
+      playerStore.level = prevLevel
     } finally {
       processingIds.value.delete(questId)
       playerStore.isSyncing = false
