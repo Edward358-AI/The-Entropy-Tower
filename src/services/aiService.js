@@ -19,10 +19,33 @@ function getDateContext() {
  * Handles cases where the AI wraps output in markdown code blocks.
  */
 function extractJSON(text) {
-  const start = text.indexOf('[')
-  const end = text.lastIndexOf(']') + 1
-  if (start === -1 || end === 0) throw new Error("No JSON array found in response")
-  return JSON.parse(text.substring(start, end))
+  try {
+    // First, try stripping markdown code blocks if they exist
+    let cleanText = text.trim()
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.substring(7)
+    } else if (cleanText.startsWith('```')) {
+      cleanText = cleanText.substring(3)
+    }
+    if (cleanText.endsWith('```')) {
+      cleanText = cleanText.substring(0, cleanText.length - 3)
+    }
+    cleanText = cleanText.trim()
+    
+    // If it's still not valid, try the bracket fallback
+    if (!cleanText.startsWith('[')) {
+      const start = cleanText.indexOf('[')
+      const end = cleanText.lastIndexOf(']') + 1
+      if (start !== -1 && end !== 0) {
+        cleanText = cleanText.substring(start, end)
+      }
+    }
+    
+    return JSON.parse(cleanText)
+  } catch (err) {
+    console.error("AI JSON Parse Error. Raw text was:", text)
+    throw err
+  }
 }
 
 
