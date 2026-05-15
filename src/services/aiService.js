@@ -52,7 +52,7 @@ function extractJSON(text) {
 // ─── Quick Quest Mode ────────────────────────────────────────
 
 export const breakDownGoal = async (goal) => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
   const { dayName, dateStr } = getDateContext()
 
@@ -137,7 +137,7 @@ export const breakDownGoal = async (goal) => {
  * @returns {Promise<Array>} - Array of quest objects with timeline-distributed deadlines
  */
 export const breakDownProject = async (description, totalDays, files = []) => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
   const { dayName, dateStr } = getDateContext()
 
