@@ -7,7 +7,9 @@ export default {
   theme: {
     extend: {
       screens: {
+        'md': '768px',
         'desk': '900px',
+        'lg': '1024px',
       },
       colors: {
         astral: {

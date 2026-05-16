@@ -12,7 +12,7 @@ import Heatmap from '../components/Heatmap.vue'
 import BossGate from '../components/BossGate.vue'
 import ThemePicker from '../components/ThemePicker.vue'
 import CoinShop from '../components/CoinShop.vue'
-import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette, RefreshCw, Coins, ShoppingBag, Flame } from 'lucide-vue-next'
+import { LogOut, Plus, Swords, CalendarDays, BookOpen, Palette, RefreshCw, Coins, ShoppingBag, Flame, TowerControl, ScrollText } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const playerStore = usePlayerStore()
@@ -44,11 +44,14 @@ const panelStyle = computed(() => {
   return (style && PANEL_STYLES[style]) ? PANEL_STYLES[style] : {}
 })
 
-// Mobile tab state
+// Mobile tab state (< 768px)
 const activeTab = ref('quests') // 'add' | 'quests' | 'history' | 'shop'
+
+// Desktop tab state (>= 768px)
+const desktopTab = ref('tower') // 'tower' | 'quests' | 'shop'
+
 const showThemePicker = ref(false)
 const isRefreshing = ref(false)
-const rightPanelTab = ref('history') // 'history' | 'shop' (desktop)
 
 const handleRefresh = async () => {
   isRefreshing.value = true
@@ -75,11 +78,11 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col p-4 desk:p-8 max-w-6xl mx-auto w-full relative">
+  <div class="min-h-screen flex flex-col p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full relative">
     <!-- Header -->
-    <header class="flex justify-between items-center mb-4 desk:mb-6">
+    <header class="flex justify-between items-center mb-4 md:mb-6">
       <div>
-        <h1 class="text-xl desk:text-2xl font-bold font-display text-white">Entropy Tower</h1>
+        <h1 class="text-xl md:text-2xl font-bold font-display text-white">Entropy Tower</h1>
         <div class="flex items-center gap-2 text-sm text-gray-400">
           <span>Streak: <span class="text-astral-glow font-bold">{{ playerStore.streak }} days</span></span>
           <span class="text-xs bg-white/10 px-2 py-0.5 rounded">Multiplier x{{ playerStore.streak >= 14 ? '2.5' :
@@ -108,8 +111,8 @@ const handleLogout = async () => {
       </div>
     </header>
 
-    <!-- ==================== MOBILE LAYOUT ==================== -->
-    <div class="desk:hidden flex flex-col gap-3">
+    <!-- ==================== MOBILE LAYOUT (< 768px) ==================== -->
+    <div class="md:hidden flex flex-col gap-3">
       <!-- Vital Signs (compact) -->
       <div class="bg-astral-nebula/30 border border-white/5 rounded-xl px-4 py-3" :style="panelStyle">
         <div class="flex items-center justify-between">
@@ -120,12 +123,10 @@ const handleLogout = async () => {
           </div>
           <div class="flex items-center gap-4">
             <span class="flex items-center gap-1 text-amber-400">
-              <span class="hidden sm:inline text-gray-400 text-sm mr-1">Coins</span>
               <Coins class="w-3.5 h-3.5" />
               <span class="font-mono text-lg font-bold">{{ playerStore.coins }}</span>
             </span>
             <span class="flex items-center gap-1 text-red-400">
-              <span class="hidden sm:inline text-gray-400 text-sm mr-1">Entropy</span>
               <Flame class="w-3.5 h-3.5" />
               <span class="font-mono text-lg">-{{ playerStore.totalXPLost }}</span>
             </span>
@@ -162,28 +163,19 @@ const handleLogout = async () => {
 
       <!-- Tab Content -->
       <div>
-        <!-- Add Quest Tab -->
-        <div v-if="activeTab === 'add'">
-          <AddGoal />
-        </div>
-
-        <!-- Active Quests Tab -->
+        <div v-if="activeTab === 'add'"><AddGoal /></div>
         <div v-else-if="activeTab === 'quests'">
           <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
             <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>
             <QuestFeed />
           </div>
         </div>
-
-        <!-- History Tab -->
         <div v-else-if="activeTab === 'history'">
           <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
             <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
             <Heatmap />
           </div>
         </div>
-
-        <!-- Shop Tab -->
         <div v-else-if="activeTab === 'shop'">
           <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
             <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Coin Shop</h2>
@@ -193,75 +185,122 @@ const handleLogout = async () => {
       </div>
     </div>
 
-    <!-- ==================== DESKTOP LAYOUT ==================== -->
-    <div class="hidden desk:grid grid-cols-12 gap-6">
+    <!-- ==================== DESKTOP LAYOUT (>= 768px) ==================== -->
+    <div class="hidden md:flex flex-col gap-6 flex-1">
 
-      <!-- Left Panel: Quest Feed -->
-      <div class="col-span-4 flex flex-col gap-6 min-w-0">
-        <AddGoal />
-        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4 flex flex-col" :style="panelStyle">
-          <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>
-          <QuestFeed class="flex-1" />
-        </div>
-      </div>
-
-      <!-- Center Panel: The Tower -->
-      <div class="col-span-4 flex flex-col">
-        <TheTower layout="vertical" />
-      </div>
-
-      <!-- Right Panel: Stats & History -->
-      <div class="col-span-4 flex flex-col gap-6">
-        <!-- Stats Card -->
-        <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
-          <h2 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Vital Signs</h2>
-          <div class="space-y-4">
-            <div class="flex justify-between">
-              <span class="text-gray-400">Current XP</span>
-              <span class="font-mono text-xl">{{ Math.floor(playerStore.currentXP) }} <span
-                  class="text-sm text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-400 flex items-center gap-1">
-                <Flame class="w-4 h-4 text-red-500" /> Total Entropy
-              </span>
-              <span class="font-mono text-xl text-red-400">-{{ playerStore.totalXPLost }} XP</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-400 flex items-center gap-1">
-                <Coins class="w-4 h-4 text-amber-400" /> Coins
-              </span>
-              <span class="font-mono text-xl text-amber-400">{{ playerStore.coins }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Panel Tabs: History | Shop -->
-        <div class="flex bg-white/5 rounded-lg overflow-hidden">
-          <button @click="rightPanelTab = 'history'"
-            class="flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
-            :class="rightPanelTab === 'history' ? 'bg-astral-glow/20 text-astral-glow' : 'text-gray-500 hover:text-gray-300'">
-            History
+      <!-- Desktop 3-Tab Navigation -->
+      <div class="flex justify-center">
+        <div class="inline-flex bg-astral-nebula/40 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
+          <button @click="desktopTab = 'tower'"
+            class="flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all duration-300"
+            :class="desktopTab === 'tower'
+              ? 'bg-astral-glow/20 text-astral-glow border-b-2 border-astral-glow'
+              : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'">
+            <Flame class="w-4 h-4" />
+            Tower
           </button>
-          <button @click="rightPanelTab = 'shop'"
-            class="flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
-            :class="rightPanelTab === 'shop' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-500 hover:text-gray-300'">
+          <button @click="desktopTab = 'quests'"
+            class="flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all duration-300 border-x border-white/5"
+            :class="desktopTab === 'quests'
+              ? 'bg-astral-glow/20 text-astral-glow border-b-2 border-astral-glow'
+              : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'">
+            <ScrollText class="w-4 h-4" />
+            Quests
+          </button>
+          <button @click="desktopTab = 'shop'"
+            class="flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all duration-300"
+            :class="desktopTab === 'shop'
+              ? 'bg-amber-500/20 text-amber-400 border-b-2 border-amber-400'
+              : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'">
+            <ShoppingBag class="w-4 h-4" />
             Shop
           </button>
         </div>
+      </div>
 
-        <!-- Heatmap -->
-        <div v-if="rightPanelTab === 'history'" class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4"
-          :style="panelStyle">
-          <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
-          <Heatmap />
+      <!-- TAB 1: Tower (left) | Vitals + Heatmap (right) -->
+      <div v-if="desktopTab === 'tower'" class="flex justify-center items-center gap-12 lg:gap-32">
+        <!-- Left: The Tower -->
+        <div class="flex flex-col items-center">
+          <TheTower layout="vertical" />
         </div>
 
-        <!-- Shop -->
-        <div v-else class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
-          <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Coin Shop</h2>
-          <CoinShop />
+        <!-- Right: Vitals + Heatmap stacked -->
+        <div class="flex flex-col gap-6 max-w-[350px]">
+          <!-- Vital Signs -->
+          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-5" :style="panelStyle">
+            <h2 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Vital Signs</h2>
+            <div class="space-y-4">
+              <div class="flex justify-between">
+                <span class="text-gray-400">Level</span>
+                <span class="font-mono text-xl text-white">{{ playerStore.level }}
+                  <span class="text-sm text-gray-500">{{ playerStore.towerMaterial }}</span>
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Current XP</span>
+                <span class="font-mono text-xl">{{ Math.floor(playerStore.currentXP) }} <span
+                    class="text-sm text-gray-500">/ {{ playerStore.xpToNextLevel }}</span></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400 flex items-center gap-1">
+                  <Flame class="w-4 h-4 text-red-500" /> Total Entropy
+                </span>
+                <span class="font-mono text-xl text-red-400">-{{ playerStore.totalXPLost }} XP</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400 flex items-center gap-1">
+                  <Coins class="w-4 h-4 text-amber-400" /> Coins
+                </span>
+                <span class="font-mono text-xl text-amber-400">{{ playerStore.coins }}</span>
+              </div>
+            </div>
+
+            <!-- Active Effects -->
+            <div v-if="playerStore.activeEffects.xpBoost > 0 || playerStore.activeEffects.doubleCoins > 0 || (playerStore.activeEffects.dampenerExpires && new Date(playerStore.activeEffects.dampenerExpires) > new Date()) || (playerStore.activeEffects.momentumSurgeExpires && new Date(playerStore.activeEffects.momentumSurgeExpires) > new Date())" 
+                 class="mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-2">
+              <span v-if="playerStore.activeEffects.xpBoost > 0" class="text-xs bg-purple-500/20 border border-purple-500/30 text-purple-300 px-2.5 py-1 rounded-full">
+                ⚡ XP Boost ({{ playerStore.activeEffects.xpBoost }} left)
+              </span>
+              <span v-if="playerStore.activeEffects.doubleCoins > 0" class="text-xs bg-amber-500/20 border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-full">
+                💰 2× Coins ({{ playerStore.activeEffects.doubleCoins }} left)
+              </span>
+              <span v-if="playerStore.activeEffects.dampenerExpires && new Date(playerStore.activeEffects.dampenerExpires) > new Date()" class="text-xs bg-blue-500/20 border border-blue-500/30 text-blue-300 px-2.5 py-1 rounded-full">
+                🔻 Dampener Active
+              </span>
+              <span v-if="playerStore.activeEffects.momentumSurgeExpires && new Date(playerStore.activeEffects.momentumSurgeExpires) > new Date()" class="text-xs bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 px-2.5 py-1 rounded-full">
+                📈 Surge Active
+              </span>
+            </div>
+          </div>
+
+          <!-- Heatmap -->
+          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-5" :style="panelStyle">
+            <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Consistency Graph</h2>
+            <Heatmap />
+          </div>
         </div>
+      </div>
+
+      <!-- TAB 2: Quests — AddGoal | QuestFeed -->
+      <!-- lg: side-by-side | md-lg: stacked vertically -->
+      <div v-else-if="desktopTab === 'quests'" class="flex flex-col lg:flex-row gap-6">
+        <!-- Left / Top: Quest Creation -->
+        <div class="lg:w-[45%] lg:min-w-[380px]">
+          <AddGoal />
+        </div>
+        <!-- Right / Bottom: Active Quests -->
+        <div class="flex-1 min-w-0">
+          <div class="bg-astral-nebula/30 border border-white/5 rounded-xl p-4" :style="panelStyle">
+            <h2 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Active Quests</h2>
+            <QuestFeed />
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Shop — Full width expanded -->
+      <div v-else-if="desktopTab === 'shop'">
+        <CoinShop :expanded="true" />
       </div>
 
     </div>

@@ -107,7 +107,7 @@ const areAllSubtasksComplete = (quest) => {
 </script>
 
 <template>
-  <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+  <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
     <div v-if="questStore.loading" class="text-center text-gray-500 py-4">
       Loading Quests...
     </div>

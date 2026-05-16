@@ -1,19 +1,25 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, defineProps } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
 import { Coins, ShieldCheck, Snowflake, Zap, CircleDollarSign, ArrowDown, Skull, Palette, Grid3x3, Swords, Sparkles } from 'lucide-vue-next'
 
+const props = defineProps({
+  expanded: { type: Boolean, default: false }
+})
+
 const playerStore = usePlayerStore()
-const activeTab = ref('consumables') // 'consumables' | 'cosmetics'
-const cosmeticSub = ref('theme') // 'theme' | 'heatmap' | 'cardStyle' | 'xpBar'
-const feedbackItem = ref(null) // flash feedback on buy
+
+// Only used when NOT expanded (mobile compact view)
+const activeTab = ref('consumables')
+const cosmeticSub = ref('theme')
+const feedbackItem = ref(null)
 
 const consumableIds = ['entropyShield', 'streakFreeze', 'xpBoost', 'doubleCoins', 'decayDampener', 'revivalElixir', 'momentumSurge', 'bossBane']
 const cosmeticCategories = {
-  theme:     { label: 'Themes',     ids: ['themeCrimson', 'themeAbyssal', 'themeNeon', 'themeAurora', 'themeSolar'] },
-  heatmap:   { label: 'Heatmap',    ids: ['heatmapOcean', 'heatmapViolet', 'heatmapEmber', 'heatmapMono'] },
-  cardStyle: { label: 'Cards',      ids: ['cardGilded', 'cardPhantom', 'cardRunic'] },
-  xpBar:     { label: 'XP Bar',     ids: ['xpGradient', 'xpLightning', 'xpPrismatic'] },
+  theme:     { label: '🔥 Premium Themes',  ids: ['themeCrimson', 'themeAbyssal', 'themeNeon', 'themeAurora', 'themeSolar'] },
+  heatmap:   { label: '📊 Heatmap Schemes', ids: ['heatmapOcean', 'heatmapViolet', 'heatmapEmber', 'heatmapMono'] },
+  cardStyle: { label: '🃏 Quest Card Styles', ids: ['cardGilded', 'cardPhantom', 'cardRunic'] },
+  xpBar:     { label: '⚡ XP Bar Styles',   ids: ['xpGradient', 'xpLightning', 'xpPrismatic'] },
 }
 
 const cosmeticItems = computed(() => cosmeticCategories[cosmeticSub.value]?.ids || [])
@@ -67,7 +73,127 @@ const getItemIcon = (itemId) => {
 </script>
 
 <template>
-  <div class="space-y-3">
+  <!-- ==================== EXPANDED LAYOUT (Desktop Shop Tab) ==================== -->
+  <div v-if="expanded" class="space-y-8 w-full">
+
+    <!-- Coin Balance Header -->
+    <div class="flex items-center justify-center gap-3 py-3">
+      <Coins class="w-6 h-6 text-amber-400" />
+      <span class="font-mono text-3xl font-bold text-amber-400">{{ playerStore.coins }}</span>
+      <span class="text-gray-500 text-sm uppercase tracking-wider">coins</span>
+    </div>
+
+    <!-- Active Effects Banner -->
+    <div v-if="playerStore.activeEffects.xpBoost > 0 || playerStore.activeEffects.doubleCoins > 0 || (playerStore.activeEffects.dampenerExpires && new Date(playerStore.activeEffects.dampenerExpires) > new Date()) || (playerStore.activeEffects.momentumSurgeExpires && new Date(playerStore.activeEffects.momentumSurgeExpires) > new Date())"
+      class="flex flex-wrap gap-2 justify-center">
+      <span v-if="playerStore.activeEffects.xpBoost > 0" class="text-xs bg-purple-500/20 border border-purple-500/30 text-purple-300 px-3 py-1 rounded-full">
+        ⚡ XP Boost ({{ playerStore.activeEffects.xpBoost }} left)
+      </span>
+      <span v-if="playerStore.activeEffects.doubleCoins > 0" class="text-xs bg-amber-500/20 border border-amber-500/30 text-amber-300 px-3 py-1 rounded-full">
+        💰 2× Coins ({{ playerStore.activeEffects.doubleCoins }} left)
+      </span>
+      <span v-if="playerStore.activeEffects.dampenerExpires && new Date(playerStore.activeEffects.dampenerExpires) > new Date()" class="text-xs bg-blue-500/20 border border-blue-500/30 text-blue-300 px-3 py-1 rounded-full">
+        🔻 Dampener Active
+      </span>
+      <span v-if="playerStore.activeEffects.momentumSurgeExpires && new Date(playerStore.activeEffects.momentumSurgeExpires) > new Date()" class="text-xs bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 px-3 py-1 rounded-full">
+        📈 Surge Active
+      </span>
+    </div>
+
+    <!-- SECTION: Consumable Items -->
+    <div>
+      <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 border-b border-white/10 pb-2">🧪 Consumable Items</h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div v-for="id in consumableIds" :key="id"
+          class="relative border rounded-xl p-4 transition-all duration-300"
+          :class="[
+            feedbackItem === id ? 'border-emerald-400 bg-emerald-500/10 scale-[1.02]' : 'border-white/10 bg-white/[0.02]',
+            isMaxed(id) ? 'opacity-50' : ''
+          ]">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xl">{{ playerStore.SHOP_ITEMS[id].emoji }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-white truncate">{{ playerStore.SHOP_ITEMS[id].name }}</div>
+              <div class="text-[11px] text-gray-500 leading-tight">{{ playerStore.SHOP_ITEMS[id].desc }}</div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2 pt-2 border-t border-white/5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] text-gray-500">{{ playerStore.inventory[id] }}/{{ playerStore.SHOP_ITEMS[id].max }}</span>
+              <span v-if="isActive(id)" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">Active</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button v-if="['xpBoost','doubleCoins','decayDampener','momentumSurge'].includes(id) && playerStore.inventory[id] > 0 && !isActive(id)"
+                @click="handleActivate(id)"
+                class="flex-1 text-xs px-2 py-1 rounded bg-purple-500/30 text-purple-300 hover:bg-purple-500/50 transition-colors font-bold">
+                Use
+              </button>
+              <button @click="handleBuy(id)"
+                :disabled="!canAfford(id) || isMaxed(id)"
+                class="flex-1 flex justify-center items-center gap-1 text-xs px-2 py-1 rounded font-bold transition-colors"
+                :class="canAfford(id) && !isMaxed(id)
+                  ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/40'
+                  : 'bg-white/5 text-gray-600 cursor-not-allowed'">
+                <Coins class="w-3 h-3 flex-shrink-0" />
+                {{ playerStore.SHOP_ITEMS[id].price }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: Each Cosmetic Category -->
+    <div v-for="(cat, key) in cosmeticCategories" :key="key">
+      <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 border-b border-white/10 pb-2">{{ cat.label }}</h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div v-for="id in cat.ids" :key="id"
+          class="relative border rounded-xl p-4 transition-all duration-300 cursor-pointer flex flex-col"
+          :class="[
+            isSelected(id) ? 'border-astral-glow bg-astral-glow/10' : 'border-white/10 bg-white/[0.02]',
+            isMaxed(id) && !isSelected(id) ? 'opacity-70' : ''
+          ]"
+          @click="isMaxed(id) ? handleSelect(id) : null">
+          <div class="flex items-center gap-2 mb-2 flex-1">
+            <span class="text-xl">{{ playerStore.SHOP_ITEMS[id].emoji }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold text-white truncate">{{ playerStore.SHOP_ITEMS[id].name }}</div>
+              <div class="text-[11px] text-gray-500 leading-tight">{{ playerStore.SHOP_ITEMS[id].desc }}</div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2 pt-2 border-t border-white/5">
+            <div class="flex items-center justify-between">
+              <span v-if="isSelected(id)" class="text-[11px] text-astral-glow font-bold">✓ Equipped</span>
+              <span v-else-if="isMaxed(id)" class="text-[11px] text-gray-400 font-bold">Owned</span>
+              <span v-else></span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button v-if="!isMaxed(id)" @click.stop="handleBuy(id)"
+                :disabled="!canAfford(id)"
+                class="w-full flex justify-center items-center gap-1 text-xs px-2 py-1 rounded font-bold transition-colors"
+                :class="canAfford(id)
+                  ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/40'
+                  : 'bg-white/5 text-gray-600 cursor-not-allowed'">
+                <Coins class="w-3 h-3 flex-shrink-0" />
+                {{ playerStore.SHOP_ITEMS[id].price }}
+              </button>
+              <button v-else-if="!isSelected(id)" @click.stop="handleSelect(id)"
+                class="w-full text-xs px-2 py-1 rounded bg-astral-glow/20 text-astral-glow hover:bg-astral-glow/40 font-bold transition-colors">
+                Equip
+              </button>
+              <button v-else @click.stop="handleSelect(id)"
+                class="w-full text-xs px-2 py-1 rounded bg-white/10 text-gray-400 hover:bg-white/20 font-bold transition-colors">
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== COMPACT LAYOUT (Mobile / Embedded) ==================== -->
+  <div v-else class="space-y-3">
 
     <!-- Tabs -->
     <div class="flex bg-white/5 rounded-lg overflow-hidden flex-wrap">
@@ -125,13 +251,11 @@ const getItemIcon = (itemId) => {
             </span>
           </div>
           <div class="flex items-center gap-1 justify-end">
-            <!-- Activate button for activatable items -->
             <button v-if="['xpBoost','doubleCoins','decayDampener','momentumSurge'].includes(id) && playerStore.inventory[id] > 0 && !isActive(id)"
               @click="handleActivate(id)"
               class="flex-1 text-[10px] px-2 py-0.5 rounded bg-purple-500/30 text-purple-300 hover:bg-purple-500/50 transition-colors font-bold whitespace-nowrap">
               Use
             </button>
-            <!-- Buy button -->
             <button @click="handleBuy(id)"
               :disabled="!canAfford(id) || isMaxed(id)"
               class="flex-1 flex justify-center items-center gap-1 text-[10px] px-2 py-0.5 rounded font-bold transition-colors whitespace-nowrap"
@@ -148,7 +272,6 @@ const getItemIcon = (itemId) => {
 
     <!-- Cosmetics -->
     <div v-else>
-      <!-- Cosmetic Sub-tabs (Only for cosmetics) -->
       <div v-if="activeTab === 'cosmetics'" class="flex flex-wrap gap-1 mb-2">
         <button v-for="(cat, key) in cosmeticCategories" :key="key"
           @click="cosmeticSub = key"
@@ -158,7 +281,6 @@ const getItemIcon = (itemId) => {
         </button>
       </div>
 
-      <!-- Items Grid -->
       <div class="grid grid-cols-2 gap-2">
         <div v-for="id in cosmeticItems" :key="id"
           class="relative border rounded-xl p-3 transition-all duration-300 cursor-pointer flex flex-col"
@@ -180,7 +302,6 @@ const getItemIcon = (itemId) => {
               <span v-else-if="isMaxed(id)" class="text-[10px] text-gray-400 font-bold whitespace-nowrap">Owned</span>
               <span v-else></span>
             </div>
-            <!-- Buy or Select -->
             <div class="flex items-center gap-1">
               <button v-if="!isMaxed(id)" @click.stop="handleBuy(id)"
                 :disabled="!canAfford(id)"
