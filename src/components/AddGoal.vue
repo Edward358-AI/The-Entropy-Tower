@@ -143,10 +143,14 @@ const handleAIBuild = async () => {
   try {
     const microQuests = await breakDownGoal(aiInput.value)
     for (const mq of microQuests) {
+      const offset = mq.deadlineOffset !== undefined ? Number(mq.deadlineOffset) : 1
+      const targetDate = addDays(new Date(), offset)
+      targetDate.setHours(23, 59, 59, 999)
+
       const questData = {
         title: mq.title,
         xpReward: mq.xp,
-        deadline: Timestamp.fromDate(addDays(new Date(), mq.deadlineOffset || 1)),
+        deadline: Timestamp.fromDate(targetDate),
       }
       
       // If AI returned subtasks, format them
@@ -212,10 +216,14 @@ const handleProjectBuild = async () => {
     )
 
     for (const mq of quests) {
+      const offset = mq.deadlineOffset !== undefined ? Number(mq.deadlineOffset) : 1
+      const targetDate = addDays(new Date(), offset)
+      targetDate.setHours(23, 59, 59, 999)
+
       const questData = {
         title: mq.title,
         xpReward: mq.xp,
-        deadline: Timestamp.fromDate(addDays(new Date(), mq.deadlineOffset || 1)),
+        deadline: Timestamp.fromDate(targetDate),
       }
 
       if (mq.subtasks && Array.isArray(mq.subtasks) && mq.subtasks.length > 0) {

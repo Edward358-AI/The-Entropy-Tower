@@ -308,7 +308,10 @@ export const useQuestStore = defineStore('quest', () => {
       const deadline = new Date(quest.deadline.seconds * 1000)
       if (now > deadline && (!quest.daysOverdue || quest.daysOverdue === 0)) {
         // Server hasn't processed this yet — show visual overdue indicator
-        quest.daysOverdue = Math.max(1, differenceInCalendarDays(now, deadline))
+        const diff = differenceInCalendarDays(now, deadline)
+        if (diff > 0) {
+          quest.daysOverdue = diff
+        }
       }
       // Never override server-set daysOverdue or status — trust the server
     }

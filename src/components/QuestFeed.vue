@@ -94,7 +94,14 @@ const saveEdit = async () => {
     xpReward: Number(editXP.value) || 10
   }
   if (editDeadline.value) {
-    updates.deadline = Timestamp.fromDate(new Date(editDeadline.value + 'T' + editTime.value + ':00'))
+    const newDeadline = new Date(editDeadline.value + 'T' + editTime.value + ':00')
+    updates.deadline = Timestamp.fromDate(newDeadline)
+    
+    // If fixing a bugged deadline by pushing it to the future, reset decay
+    if (newDeadline > new Date()) {
+      updates.daysOverdue = 0
+      updates.status = 'active'
+    }
   }
   await questStore.editQuest(editingId.value, updates)
   editingId.value = null
@@ -163,11 +170,9 @@ const areAllSubtasksComplete = (quest) => {
           </div>
 
           <div class="flex items-center gap-1 shrink-0 self-start">
-            <button @click.stop="startEdit(quest)" :disabled="quest.daysOverdue > 0"
-              class="p-2 rounded-full transition-colors" :class="quest.daysOverdue > 0
-                ? 'text-gray-700 cursor-not-allowed opacity-20'
-                : 'hover:bg-blue-500/20 text-gray-600 hover:text-blue-400 opacity-40 hover:opacity-100'"
-              :title="quest.daysOverdue > 0 ? 'Cannot edit while decaying' : 'Edit Quest'">
+            <button @click.stop="startEdit(quest)"
+              class="p-2 rounded-full transition-colors hover:bg-blue-500/20 text-gray-600 hover:text-blue-400 opacity-40 hover:opacity-100"
+              title="Edit Quest">
               <Pencil class="w-4 h-4" />
             </button>
 
