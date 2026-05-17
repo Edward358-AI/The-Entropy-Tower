@@ -112,7 +112,14 @@ async function processUserDecay(db, userId, now, todayStr) {
     if (now <= deadline) continue // Not overdue
 
     const oldDays = quest.daysOverdue || 0
-    const currentDaysOverdue = Math.max(1, Math.floor((now - deadline) / (1000 * 60 * 60 * 24)))
+
+    // Calendar-day based calculation:
+    // As soon as the deadline time passes → Rot Level 1 (same day).
+    // Each additional calendar day boundary crossed adds another level.
+    const deadlineDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate())
+    const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const calendarDaysDiff = Math.round((nowDate - deadlineDate) / (1000 * 60 * 60 * 24))
+    const currentDaysOverdue = Math.max(1, calendarDaysDiff)
 
     // Calculate penalty for each NEW day of decay since last check
     for (let day = oldDays + 1; day <= currentDaysOverdue; day++) {

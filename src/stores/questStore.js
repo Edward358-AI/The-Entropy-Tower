@@ -307,11 +307,10 @@ export const useQuestStore = defineStore('quest', () => {
       if (!quest.deadline) continue
       const deadline = new Date(quest.deadline.seconds * 1000)
       if (now > deadline && (!quest.daysOverdue || quest.daysOverdue === 0)) {
-        // Server hasn't processed this yet — show visual overdue indicator
-        const diff = differenceInCalendarDays(now, deadline)
-        if (diff > 0) {
-          quest.daysOverdue = diff
-        }
+        // Deadline has passed — immediately show Rot Level 1.
+        // Additional rot levels accumulate per calendar day after that.
+        const calendarDaysDiff = differenceInCalendarDays(now, deadline)
+        quest.daysOverdue = Math.max(1, calendarDaysDiff)
       }
       // Never override server-set daysOverdue or status — trust the server
     }
