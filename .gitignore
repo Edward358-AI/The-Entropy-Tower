@@ -6,3 +6,5 @@ dist-ssr
 .env
 .idea
 .vscode
+.firebase/hosting.ZGlzdA.cache
+firebase-debug.log
