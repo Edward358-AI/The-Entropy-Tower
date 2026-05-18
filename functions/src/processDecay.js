@@ -85,8 +85,10 @@ async function processUserDecay(db, userId, now, todayStr) {
 
   const stats = statsSnap.data()
 
-  // Skip if already processed today
-  if (stats.lastDecayDate === todayStr) return
+  // NOTE: We intentionally do NOT skip based on lastDecayDate here.
+  // The quest-level daysOverdue tracking prevents double-counting penalties,
+  // and skipping based on lastDecayDate caused quests that went overdue
+  // AFTER the daily check to be silently missed until the next day.
 
   // Load active quests with deadlines
   const questsSnap = await db.collection(`users/${userId}/quests`)
@@ -96,7 +98,9 @@ async function processUserDecay(db, userId, now, todayStr) {
   if (questsSnap.empty) {
     // No quests — still clean up expired effects and update lastDecayDate
     const effectsUpdate = cleanExpiredEffects(stats)
-    await statsRef.update({ lastDecayDate: todayStr, ...effectsUpdate })
+    if (stats.lastDecayDate !== todayStr || Object.keys(effectsUpdate).length > 0) {
+      await statsRef.update({ lastDecayDate: todayStr, ...effectsUpdate })
+    }
     return
   }
 
@@ -121,34 +125,44 @@ async function processUserDecay(db, userId, now, todayStr) {
     const calendarDaysDiff = Math.round((nowDate - deadlineDate) / (1000 * 60 * 60 * 24))
     const currentDaysOverdue = Math.max(1, calendarDaysDiff)
 
-    // Calculate penalty for each NEW day of decay since last check
-    for (let day = oldDays + 1; day <= currentDaysOverdue; day++) {
-      let rawPenalty = getDecayPenalty(day, stats.level)
+    // Only process if there are new days of overdue since last check
+    if (currentDaysOverdue > oldDays) {
+      // Calculate penalty for each NEW day of decay since last check
+      for (let day = oldDays + 1; day <= currentDaysOverdue; day++) {
+        let rawPenalty = getDecayPenalty(day, stats.level)
 
-      // Check if dampener was active for this decay boundary
-      const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + (day - 1))
-      if (isDampenerActive(stats.activeEffects?.dampenerExpires, boundaryDate)) {
-        rawPenalty = Math.round(rawPenalty / 2)
+        // Check if dampener was active for this decay boundary
+        const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + (day - 1))
+        if (isDampenerActive(stats.activeEffects?.dampenerExpires, boundaryDate)) {
+          rawPenalty = Math.round(rawPenalty / 2)
+        }
+
+        totalPenalty += rawPenalty
+
+        // Track missed dates for heatmap
+        const dateStr = formatDateStr(boundaryDate)
+        const key = `missed_${dateStr}`
+        missedDates[key] = (missedDates[key] || 0) + 1
       }
 
-      totalPenalty += rawPenalty
-
-      // Track missed dates for heatmap
-      const dateStr = formatDateStr(boundaryDate)
-      const key = `missed_${dateStr}`
-      missedDates[key] = (missedDates[key] || 0) + 1
+      // Update quest document
+      const newStatus = currentDaysOverdue >= 5 ? 'corrupted' : quest.status
+      questUpdates.push({
+        ref: questDoc.ref,
+        data: {
+          daysOverdue: currentDaysOverdue,
+          status: newStatus,
+        }
+      })
     }
-
-    // Update quest document
-    const newStatus = currentDaysOverdue >= 5 ? 'corrupted' : quest.status
-    questUpdates.push({
-      ref: questDoc.ref,
-      data: {
-        daysOverdue: currentDaysOverdue,
-        status: newStatus,
-      }
-    })
   }
+
+  // Always clean up expired time-based effects (even if no penalty)
+  const effectsUpdate = cleanExpiredEffects(stats)
+
+  // If nothing changed, skip the write entirely
+  const hasChanges = totalPenalty > 0 || questUpdates.length > 0 || Object.keys(effectsUpdate).length > 0 || stats.lastDecayDate !== todayStr
+  if (!hasChanges) return
 
   // Build stats update
   const statsUpdate = { lastDecayDate: todayStr }
@@ -182,8 +196,6 @@ async function processUserDecay(db, userId, now, todayStr) {
     }
   }
 
-  // Always clean up expired time-based effects (even if no penalty)
-  const effectsUpdate = cleanExpiredEffects(stats)
   Object.assign(statsUpdate, effectsUpdate)
 
   // Write all updates in a batch for atomicity
@@ -211,7 +223,9 @@ async function processUserDecay(db, userId, now, todayStr) {
   await batch.commit()
 
   // Recompute streak from heatmap (after batch commit so missed dates are written)
-  await recomputeStreak(db, userId, statsRef)
+  if (totalPenalty > 0) {
+    await recomputeStreak(db, userId, statsRef)
+  }
 }
 
 /**

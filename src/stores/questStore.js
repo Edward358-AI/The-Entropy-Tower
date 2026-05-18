@@ -361,6 +361,7 @@ export const useQuestStore = defineStore('quest', () => {
     editQuest,
     reviveQuest,
     toggleSubtask,
+    refreshOverdueStatus,
     handleMidnightRollover,
     cleanup
   }

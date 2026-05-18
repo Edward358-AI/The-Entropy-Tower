@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { usePlayerStore } from '../stores/playerStore'
 import { useQuestStore } from '../stores/questStore'
@@ -18,7 +18,7 @@ const authStore = useAuthStore()
 const playerStore = usePlayerStore()
 const questStore = useQuestStore()
 const router = useRouter()
-const { onDayChange } = useTime()
+const { now, onDayChange } = useTime()
 
 // Card cosmetic styles for app-wide panels
 const PANEL_STYLES = {
@@ -64,6 +64,11 @@ const handleRefresh = async () => {
 
 onMounted(() => {
   playerStore.initStats()
+})
+
+// Every 60-second tick: re-check if any quests have become overdue mid-session
+watch(now, () => {
+  questStore.refreshOverdueStatus()
 })
 
 // Midnight rollover: hard refresh when the date changes locally
