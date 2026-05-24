@@ -75,7 +75,7 @@ export const useQuestStore = defineStore('quest', () => {
     // Trigger server-side decay processing (Phase 1)
     try {
       const processMyDecay = httpsCallable(functions, 'processMyDecay')
-      await processMyDecay()
+      await processMyDecay({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
     } catch (err) {
       console.warn('Server decay processing failed:', err.message)
     }
@@ -146,7 +146,7 @@ export const useQuestStore = defineStore('quest', () => {
     playerStore.isSyncing = true
     try {
       const completeQuestFn = httpsCallable(functions, 'completeQuest')
-      await completeQuestFn({ questId })
+      await completeQuestFn({ questId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
       // onSnapshot will confirm with the server's authoritative values
     } catch (err) {
       console.error("Failed to complete quest:", err)
@@ -178,7 +178,7 @@ export const useQuestStore = defineStore('quest', () => {
     playerStore.isSyncing = true
     try {
       const deleteQuestFn = httpsCallable(functions, 'deleteQuest')
-      await deleteQuestFn({ questId })
+      await deleteQuestFn({ questId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
       // Server handles penalty + deletion; onSnapshot will confirm removal
     } catch (err) {
       console.error("Failed to delete quest:", err)
@@ -332,7 +332,7 @@ export const useQuestStore = defineStore('quest', () => {
     if (auth.currentUser) {
       try {
         const processMyDecay = httpsCallable(functions, 'processMyDecay')
-        await processMyDecay()
+        await processMyDecay({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
         console.log('[questStore] Server decay triggered successfully at midnight.')
       } catch (err) {
         console.warn('[questStore] Midnight server decay failed:', err.message)

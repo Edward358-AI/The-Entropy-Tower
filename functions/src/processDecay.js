@@ -20,6 +20,7 @@ const {
   isDampenerActive,
   formatDateStr,
   computeStreakFromHeatmap,
+  getPacificDateParts,
 } = require('./gameConfig')
 
 /**
@@ -52,7 +53,6 @@ function cleanExpiredEffects(stats) {
 async function processDecay() {
   const db = admin.firestore()
   const now = new Date()
-  const todayStr = formatDateStr(now)
 
   // Get all user documents
   const usersSnap = await db.collection('users').listDocuments()
@@ -62,7 +62,7 @@ async function processDecay() {
 
   for (const userDocRef of usersSnap) {
     try {
-      await processUserDecay(db, userDocRef.id, now, todayStr)
+      await processUserDecay(db, userDocRef.id, now)
       processedCount++
     } catch (err) {
       console.error(`Failed to process decay for user ${userDocRef.id}:`, err)
@@ -77,13 +77,15 @@ async function processDecay() {
 /**
  * Process decay for a single user.
  */
-async function processUserDecay(db, userId, now, todayStr) {
+async function processUserDecay(db, userId, now, clientTimezone) {
   // Load stats
   const statsRef = db.doc(`users/${userId}/stats/main`)
   const statsSnap = await statsRef.get()
   if (!statsSnap.exists) return // No stats = new user, skip
 
   const stats = statsSnap.data()
+  const timezone = clientTimezone || stats.timezone || 'America/Los_Angeles'
+  const todayStr = formatDateStr(now, timezone)
 
   // NOTE: We intentionally do NOT skip based on lastDecayDate here.
   // The quest-level daysOverdue tracking prevents double-counting penalties,
@@ -120,8 +122,11 @@ async function processUserDecay(db, userId, now, todayStr) {
     // Calendar-day based calculation:
     // As soon as the deadline time passes → Rot Level 1 (same day).
     // Each additional calendar day boundary crossed adds another level.
-    const deadlineDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate())
-    const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const deadlineParts = getPacificDateParts(deadline, timezone)
+    const nowParts = getPacificDateParts(now, timezone)
+
+    const deadlineDate = new Date(Date.UTC(deadlineParts.year, deadlineParts.month - 1, deadlineParts.day))
+    const nowDate = new Date(Date.UTC(nowParts.year, nowParts.month - 1, nowParts.day))
     const calendarDaysDiff = Math.round((nowDate - deadlineDate) / (1000 * 60 * 60 * 24))
     const currentDaysOverdue = Math.max(1, calendarDaysDiff)
 
@@ -132,7 +137,7 @@ async function processUserDecay(db, userId, now, todayStr) {
         let rawPenalty = getDecayPenalty(day, stats.level)
 
         // Check if dampener was active for this decay boundary
-        const boundaryDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() + (day - 1))
+        const boundaryDate = new Date(Date.UTC(deadlineParts.year, deadlineParts.month - 1, deadlineParts.day + (day - 1), 12, 0, 0))
         if (isDampenerActive(stats.activeEffects?.dampenerExpires, boundaryDate)) {
           rawPenalty = Math.round(rawPenalty / 2)
         }
@@ -140,7 +145,7 @@ async function processUserDecay(db, userId, now, todayStr) {
         totalPenalty += rawPenalty
 
         // Track missed dates for heatmap
-        const dateStr = formatDateStr(boundaryDate)
+        const dateStr = formatDateStr(boundaryDate, timezone)
         const key = `missed_${dateStr}`
         missedDates[key] = (missedDates[key] || 0) + 1
       }
@@ -161,11 +166,11 @@ async function processUserDecay(db, userId, now, todayStr) {
   const effectsUpdate = cleanExpiredEffects(stats)
 
   // If nothing changed, skip the write entirely
-  const hasChanges = totalPenalty > 0 || questUpdates.length > 0 || Object.keys(effectsUpdate).length > 0 || stats.lastDecayDate !== todayStr
+  const hasChanges = totalPenalty > 0 || questUpdates.length > 0 || Object.keys(effectsUpdate).length > 0 || stats.lastDecayDate !== todayStr || stats.timezone !== timezone
   if (!hasChanges) return
 
   // Build stats update
-  const statsUpdate = { lastDecayDate: todayStr }
+  const statsUpdate = { lastDecayDate: todayStr, timezone }
 
   if (totalPenalty > 0) {
     // Handle streak freeze
@@ -224,19 +229,19 @@ async function processUserDecay(db, userId, now, todayStr) {
 
   // Recompute streak from heatmap (after batch commit so missed dates are written)
   if (totalPenalty > 0) {
-    await recomputeStreak(db, userId, statsRef)
+    await recomputeStreak(db, userId, statsRef, timezone)
   }
 }
 
 /**
  * Recompute streak from heatmap data and update stats.
  */
-async function recomputeStreak(db, userId, statsRef) {
+async function recomputeStreak(db, userId, statsRef, timezone) {
   try {
     const heatmapSnap = await db.doc(`users/${userId}/history/heatmap`).get()
     if (!heatmapSnap.exists) return
 
-    const streak = computeStreakFromHeatmap(heatmapSnap.data())
+    const streak = computeStreakFromHeatmap(heatmapSnap.data(), timezone)
     await statsRef.update({ streak })
   } catch (err) {
     console.error(`Failed to recompute streak for user ${userId}:`, err)

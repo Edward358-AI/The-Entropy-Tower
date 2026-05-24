@@ -22,7 +22,7 @@ const {
   computeStreakFromHeatmap,
 } = require('./gameConfig')
 
-async function handleCompleteQuest(db, userId, questId) {
+async function handleCompleteQuest(db, userId, questId, clientTimezone) {
   const questRef = db.doc(`users/${userId}/quests/${questId}`)
   const statsRef = db.doc(`users/${userId}/stats/main`)
   const heatmapRef = db.doc(`users/${userId}/history/heatmap`)
@@ -56,8 +56,9 @@ async function handleCompleteQuest(db, userId, questId) {
     }
 
     const stats = statsSnap.data()
+    const timezone = clientTimezone || stats.timezone || 'America/Los_Angeles'
     const now = new Date()
-    const todayStr = formatDateStr(now)
+    const todayStr = formatDateStr(now, timezone)
 
     // --- Calculate reward ---
     let reward = quest.xpReward || 0
@@ -120,7 +121,7 @@ async function handleCompleteQuest(db, userId, questId) {
       let streak = stats.streak || 0
       const yesterdayDate = new Date(now)
       yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-      const yesterdayStr = formatDateStr(yesterdayDate)
+      const yesterdayStr = formatDateStr(yesterdayDate, timezone)
 
       if (lastActiveDate === todayStr) {
         // Already active today, no change
@@ -133,7 +134,7 @@ async function handleCompleteQuest(db, userId, questId) {
       // Recompute streak from heatmap (inside transaction for consistency)
       const heatmapData = heatmapSnap.exists ? { ...heatmapSnap.data() } : {}
       heatmapData[todayStr] = (heatmapData[todayStr] || 0) + 1
-      const computedStreak = computeStreakFromHeatmap(heatmapData)
+      const computedStreak = computeStreakFromHeatmap(heatmapData, timezone)
       streak = computedStreak
 
       if (isLevelCapped) {
@@ -164,6 +165,7 @@ async function handleCompleteQuest(db, userId, questId) {
           lastActiveDate: todayStr,
           activeEffects,
           inventory,
+          timezone,
           lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
         }
 
@@ -202,6 +204,7 @@ async function handleCompleteQuest(db, userId, questId) {
         highestLevel, coins, streak,
         lastActiveDate: todayStr,
         activeEffects,
+        timezone,
         lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
       }
 

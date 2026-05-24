@@ -99,17 +99,72 @@ const isDampenerActive = (dampenerExpires, atDate = null) => {
 }
 
 /**
- * Format a Date as YYYY-MM-DD string.
+ * Format a Date as YYYY-MM-DD string in a specified timezone.
  */
-const formatDateStr = (date) => {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+const formatDateStr = (date, timeZone = 'America/Los_Angeles') => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    const parts = formatter.formatToParts(date)
+    const year = parts.find(p => p.type === 'year').value
+    const month = parts.find(p => p.type === 'month').value
+    const day = parts.find(p => p.type === 'day').value
+    return `${year}-${month}-${day}`
+  } catch (err) {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    const parts = formatter.formatToParts(date)
+    const year = parts.find(p => p.type === 'year').value
+    const month = parts.find(p => p.type === 'month').value
+    const day = parts.find(p => p.type === 'day').value
+    return `${year}-${month}-${day}`
+  }
+}
+
+/**
+ * Get date parts in the specified timezone.
+ */
+const getPacificDateParts = (date, timeZone = 'America/Los_Angeles') => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    })
+    const parts = formatter.formatToParts(date)
+    const year = parseInt(parts.find(p => p.type === 'year').value, 10)
+    const month = parseInt(parts.find(p => p.type === 'month').value, 10)
+    const day = parseInt(parts.find(p => p.type === 'day').value, 10)
+    return { year, month, day }
+  } catch (err) {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    })
+    const parts = formatter.formatToParts(date)
+    const year = parseInt(parts.find(p => p.type === 'year').value, 10)
+    const month = parseInt(parts.find(p => p.type === 'month').value, 10)
+    const day = parseInt(parts.find(p => p.type === 'day').value, 10)
+    return { year, month, day }
+  }
 }
 
 /**
  * Compute streak from heatmap data object.
  * Returns the number of consecutive days with completions and no misses.
  */
-const computeStreakFromHeatmap = (heatmapData) => {
+const computeStreakFromHeatmap = (heatmapData, timeZone = 'America/Los_Angeles') => {
   if (!heatmapData) return 0
   let streak = 0
   const today = new Date()
@@ -117,7 +172,7 @@ const computeStreakFromHeatmap = (heatmapData) => {
   for (let i = 0; i <= 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = formatDateStr(d)
+    const dateStr = formatDateStr(d, timeZone)
 
     const completed = heatmapData[dateStr] || 0
     const missed = heatmapData[`missed_${dateStr}`] || 0
@@ -178,4 +233,5 @@ module.exports = {
   isDampenerActive,
   formatDateStr,
   computeStreakFromHeatmap,
+  getPacificDateParts,
 }

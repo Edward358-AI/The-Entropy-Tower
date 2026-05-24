@@ -20,7 +20,7 @@ const {
   formatDateStr,
 } = require('./gameConfig')
 
-async function handleDeleteQuest(db, userId, questId) {
+async function handleDeleteQuest(db, userId, questId, clientTimezone) {
   const questRef = db.doc(`users/${userId}/quests/${questId}`)
   const statsRef = db.doc(`users/${userId}/stats/main`)
   const heatmapRef = db.doc(`users/${userId}/history/heatmap`)
@@ -42,6 +42,7 @@ async function handleDeleteQuest(db, userId, questId) {
     }
 
     const stats = statsSnap.data()
+    const timezone = clientTimezone || stats.timezone || 'America/Los_Angeles'
     let penaltyApplied = 0
 
     // Abandonment penalty: if quest is overdue, apply current day's decay
@@ -86,6 +87,7 @@ async function handleDeleteQuest(db, userId, questId) {
       }
 
       statsUpdate.lastUpdated = admin.firestore.FieldValue.serverTimestamp()
+      statsUpdate.timezone = timezone
       t.update(statsRef, statsUpdate)
     }
 
@@ -94,7 +96,7 @@ async function handleDeleteQuest(db, userId, questId) {
 
     // Write missed entry to heatmap if quest was overdue
     if (quest.daysOverdue > 0) {
-      const todayStr = formatDateStr(new Date())
+      const todayStr = formatDateStr(new Date(), timezone)
       t.set(heatmapRef, {
         [`missed_${todayStr}`]: admin.firestore.FieldValue.increment(1),
       }, { merge: true })

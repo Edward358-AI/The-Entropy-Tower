@@ -61,12 +61,12 @@ exports.processMyDecay = onCall(
     }
 
     const userId = request.auth.uid
+    const timezone = request.data?.timezone
     const now = new Date()
-    const todayStr = formatDateStr(now)
     const db = admin.firestore()
 
     try {
-      await processUserDecay(db, userId, now, todayStr)
+      await processUserDecay(db, userId, now, timezone)
       return { success: true }
     } catch (err) {
       console.error(`processMyDecay failed for user ${userId}:`, err)
@@ -88,14 +88,14 @@ exports.completeQuest = onCall(
       throw new HttpsError('unauthenticated', 'Must be signed in.')
     }
 
-    const { questId } = request.data || {}
+    const { questId, timezone } = request.data || {}
     if (!questId || typeof questId !== 'string') {
       throw new HttpsError('invalid-argument', 'questId is required.')
     }
 
     const db = admin.firestore()
     try {
-      return await handleCompleteQuest(db, request.auth.uid, questId)
+      return await handleCompleteQuest(db, request.auth.uid, questId, timezone)
     } catch (err) {
       console.error(`completeQuest failed for user ${request.auth.uid}:`, err)
       throw new HttpsError('internal', err.message || 'Failed to complete quest.')
@@ -116,14 +116,14 @@ exports.deleteQuest = onCall(
       throw new HttpsError('unauthenticated', 'Must be signed in.')
     }
 
-    const { questId } = request.data || {}
+    const { questId, timezone } = request.data || {}
     if (!questId || typeof questId !== 'string') {
       throw new HttpsError('invalid-argument', 'questId is required.')
     }
 
     const db = admin.firestore()
     try {
-      return await handleDeleteQuest(db, request.auth.uid, questId)
+      return await handleDeleteQuest(db, request.auth.uid, questId, timezone)
     } catch (err) {
       console.error(`deleteQuest failed for user ${request.auth.uid}:`, err)
       throw new HttpsError('internal', err.message || 'Failed to delete quest.')
